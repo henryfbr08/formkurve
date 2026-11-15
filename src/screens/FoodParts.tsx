@@ -2,7 +2,9 @@ import { useState } from 'react'
 import { uid, useStore } from '../lib/store'
 import { todayKey, addDays, mondayOf } from '../lib/dates'
 import type { Food, Macros } from '../data/nutrition'
-import { RECIPES } from '../data/recipes'
+import type { Recipe } from '../data/recipes'
+import { getRecipes } from '../lib/plan'
+import RecipeForm, { RECIPE_TAGS } from './RecipeForm'
 import { getTargets, MODES, type Mode } from '../lib/targets'
 
 const num = (v: string) => parseFloat(v.replace(',', '.')) || 0
@@ -103,14 +105,17 @@ export function FoodForm({ food, onClose, onSaved }: { food: Food | null; onClos
 /* ---------- Rezepte ---------- */
 
 export function RecipeList({ onAdd, query = '' }: { onAdd: (title: string, m: Macros) => void; query?: string }) {
+  const { data, update } = useStore()
   const [open, setOpen] = useState<string | null>(null)
   const [filter, setFilter] = useState('Alle')
   const [search, setSearch] = useState(query)
-  const tags = ['Alle', 'Meal Prep', 'Frühstück', 'Mittag', 'Abend']
+  const [form, setForm] = useState<{ recipe: Recipe | null } | null>(null)
+  const tags = ['Alle', ...RECIPE_TAGS]
   const q = search.trim().toLowerCase()
-  const list = RECIPES.filter((r) => (filter === 'Alle' || r.tags.includes(filter)) && (!q || r.title.toLowerCase().includes(q) || r.ingredients.some((i) => i.toLowerCase().includes(q))))
+  const list = getRecipes(data).filter((r) => (filter === 'Alle' || r.tags.includes(filter)) && (!q || r.title.toLowerCase().includes(q) || r.ingredients.some((i) => i.toLowerCase().includes(q))))
   return (
     <>
+      {form && <RecipeForm recipe={form.recipe} onClose={() => setForm(null)} />}
       <input className="search" placeholder="Rezept oder Zutat suchen …" value={search} onChange={(e) => setSearch(e.target.value)} />
       <div className="chips">
         {tags.map((t) => (
@@ -165,14 +170,35 @@ export function RecipeList({ onAdd, query = '' }: { onAdd: (title: string, m: Ma
                   ))}
                 </ol>
                 {r.tip && <p className="hint">Tipp: {r.tip}</p>}
-                <button className="primary wide" onClick={() => onAdd(r.title, r)}>
-                  + 1 Portion eintragen
-                </button>
+                <div className="row">
+                  <button className="primary" style={{ flex: 1 }} onClick={() => onAdd(r.title, r)}>
+                    + 1 Portion eintragen
+                  </button>
+                  <button className="ghost" onClick={() => setForm({ recipe: r })}>
+                    Bearbeiten
+                  </button>
+                </div>
               </div>
             )}
           </section>
         )
       })}
+      <button className="soft wide" onClick={() => setForm({ recipe: null })}>
+        + Eigenes Rezept anlegen
+      </button>
+      {data.recipes && (
+        <button
+          className="ghost small"
+          onClick={() =>
+            update((d) => {
+              delete d.recipes
+              return d
+            })
+          }
+        >
+          Rezepte auf Vorgabe zurücksetzen
+        </button>
+      )}
       <p className="hint">Nährwerte pro Portion, aus Rohgewichten berechnet und gerundet.</p>
     </>
   )

@@ -34,7 +34,7 @@ export function applyUrlImport(data: AppData, search: string): { data: AppData; 
   const km = num('run_km')
   const min = num('run_min')
   if (km && min) {
-    const planned = plannedRunOn(d.runPlanStart, date)
+    const planned = plannedRunOn(d, date)
     if (planned) {
       d.runs[planned.key] = { date, km: Math.round(km * 100) / 100, minutes: min }
       msgs.push(`Lauf ${km.toFixed(2).replace('.', ',')} km bei Woche ${planned.week} eingetragen`)

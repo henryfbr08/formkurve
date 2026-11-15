@@ -2,9 +2,9 @@ import { useState } from 'react'
 import { uid, useStore, type FoodEntry, type MealId } from '../lib/store'
 import { addDays, formatLong, isWeekend, todayKey } from '../lib/dates'
 import { FOODS, MEAL_PLAN, WEEKEND_RULES, type Food as FoodItem, type Macros } from '../data/nutrition'
-import { RECIPES } from '../data/recipes'
 import { EMPTY, lineMacros, round, scale, shortMacros, sumEntries } from '../lib/macros'
 import { getTargets, MODES } from '../lib/targets'
+import { getRecipes } from '../lib/plan'
 import { searchProducts } from '../lib/off'
 import MacroOverview from './MacroOverview'
 import Scanner from './Scanner'
@@ -153,7 +153,7 @@ export default function Food() {
   const foodHits = q ? allFoods.filter((f) => f.name.toLowerCase().includes(q)) : []
   const dishHits = q
     ? [
-        ...RECIPES.filter((r) => r.title.toLowerCase().includes(q)).map((r) => ({ title: r.title, m: r as Macros })),
+        ...getRecipes(data).filter((r) => r.title.toLowerCase().includes(q)).map((r) => ({ title: r.title, m: r as Macros })),
         ...MEAL_PLAN.flatMap((s) => s.options)
           .filter((o) => o.title.toLowerCase().includes(q))
           .map((o) => ({ title: o.title, m: o as Macros })),

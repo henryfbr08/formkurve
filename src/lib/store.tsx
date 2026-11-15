@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { nextMonday, todayKey } from './dates'
 import type { Food } from '../data/nutrition'
 import type { Workout } from '../data/training'
+import type { PlannedRun } from '../data/running'
+import type { Recipe } from '../data/recipes'
 import { DEFAULT_SETTINGS, type Settings } from './targets'
 
 export interface SetEntry {
@@ -65,6 +67,10 @@ export interface AppData {
   plan?: Workout[]
   /** Wochentag (0 = So) → Workout-ID; fehlt = Vorgabe */
   schedule?: Record<number, string | null>
+  /** eigener Laufplan / eigene Lauftage / eigene Rezepte; fehlt = Vorgabe */
+  runPlan?: PlannedRun[]
+  runDays?: Record<1 | 2 | 3, number>
+  recipes?: Recipe[]
 }
 
 const STORAGE_KEY = 'formkurve-data-v1'

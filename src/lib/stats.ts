@@ -1,6 +1,7 @@
 import { addDays, daysBetween, fromKey, isWeekend, mondayOf } from './dates'
 import type { AppData, WorkoutLog } from './store'
-import { RUN_PLAN, RUN_WEEKDAY, TOTAL_WEEKS, type PlannedRun } from '../data/running'
+import type { PlannedRun } from '../data/running'
+import { getRunDays, getRunPlan, runWeeks } from './plan'
 import { TARGETS } from '../data/nutrition'
 import type { Exercise } from '../data/training'
 
@@ -33,24 +34,25 @@ export function rollingAvg(weights: Record<string, number>) {
 }
 
 /** Plan-Woche (1-basiert) für ein Datum, oder null wenn außerhalb */
-export function planWeek(start: string, date: string): number | null {
-  const d = daysBetween(start, date)
+export function planWeek(data: AppData, date: string): number | null {
+  const d = daysBetween(data.runPlanStart, date)
   if (d < 0) return null
   const w = Math.floor(d / 7) + 1
-  return w > TOTAL_WEEKS ? null : w
+  return w > runWeeks(data) ? null : w
 }
 
-export function plannedRunOn(start: string, date: string): PlannedRun | null {
-  const week = planWeek(start, date)
+export function plannedRunOn(data: AppData, date: string): PlannedRun | null {
+  const week = planWeek(data, date)
   if (!week) return null
   const wd = fromKey(date).getDay()
-  return RUN_PLAN.find((r) => r.week === week && RUN_WEEKDAY[r.slot] === wd) ?? null
+  const days = getRunDays(data)
+  return getRunPlan(data).find((r) => r.week === week && days[r.slot] === wd) ?? null
 }
 
 /** Datum eines geplanten Laufs */
-export function runDate(start: string, run: PlannedRun): string {
-  const offset = { 1: 1, 2: 4, 3: 6 }[run.slot]
-  return addDays(start, (run.week - 1) * 7 + offset)
+export function runDate(data: AppData, run: PlannedRun): string {
+  const offset = (getRunDays(data)[run.slot] + 6) % 7
+  return addDays(data.runPlanStart, (run.week - 1) * 7 + offset)
 }
 
 /** Letztes gespeichertes Training mit dieser Übung vor `beforeDate` */

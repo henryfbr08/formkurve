@@ -27,3 +27,25 @@ export function slug(name: string): string {
       .replace(/^-|-$/g, '') || 'uebung'
   )
 }
+
+/* ---------- Laufplan ---------- */
+import { RUN_PLAN, RUN_WEEKDAY, type PlannedRun } from '../data/running'
+import { RECIPES, type Recipe } from '../data/recipes'
+
+export function getRunPlan(d: AppData): PlannedRun[] {
+  return d.runPlan ?? RUN_PLAN
+}
+
+/** Lauf 1/2/3 → Wochentag (0 = So … 6 = Sa) */
+export function getRunDays(d: AppData): Record<1 | 2 | 3, number> {
+  return d.runDays ?? RUN_WEEKDAY
+}
+
+export function runWeeks(d: AppData): number {
+  return getRunPlan(d).reduce((m, r) => Math.max(m, r.week), 0)
+}
+
+/* ---------- Rezepte ---------- */
+export function getRecipes(d: AppData): Recipe[] {
+  return d.recipes ?? RECIPES
+}

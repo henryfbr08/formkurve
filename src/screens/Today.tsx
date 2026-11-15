@@ -32,7 +32,7 @@ export default function Today({ go }: { go: (t: Tab) => void }) {
   const workoutId = schedule[fromKey(today).getDay()]
   const workout = findWorkout(data, workoutId) ?? null
   const workoutDone = workoutId ? !!data.workouts[`${today}|${workoutId}`] : false
-  const run = plannedRunOn(data.runPlanStart, today)
+  const run = plannedRunOn(data, today)
   const runDone = run ? !!data.runs[run.key] : false
 
   const totals = sumEntries(data.food[today] ?? [])
@@ -89,7 +89,7 @@ export default function Today({ go }: { go: (t: Tab) => void }) {
   const week = Array.from({ length: 7 }, (_, i) => {
     const date = addDays(monday, i)
     const wId = schedule[fromKey(date).getDay()]
-    const r = plannedRunOn(data.runPlanStart, date)
+    const r = plannedRunOn(data, date)
     return {
       date,
       gym: wId ? (data.workouts[`${date}|${wId}`] ? 'done' : 'planned') : null,
