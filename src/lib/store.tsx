@@ -27,6 +27,12 @@ export interface FoodEntry {
   name: string
   kcal: number
   protein: number
+  /** ältere Einträge haben diese Werte evtl. noch nicht */
+  carbs?: number
+  fat?: number
+  fiber?: number
+  sugar?: number
+  salt?: number
 }
 
 export interface AppData {

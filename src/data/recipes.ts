@@ -1,11 +1,10 @@
-export interface Recipe {
+import type { Macros } from './nutrition'
+
+export interface Recipe extends Macros {
   id: string
   title: string
   tags: string[]
   portions: number
-  /** pro Portion */
-  kcal: number
-  protein: number
   minutes: number
   /** Haltbarkeit im Kühlschrank */
   keeps: string
@@ -26,6 +25,11 @@ export const RECIPES: Recipe[] = [
     portions: 4,
     kcal: 640,
     protein: 58,
+    carbs: 79,
+    fat: 9,
+    fiber: 7,
+    sugar: 10,
+    salt: 2.6,
     minutes: 30,
     keeps: '3–4 Tage',
     ingredients: [
@@ -53,6 +57,11 @@ export const RECIPES: Recipe[] = [
     portions: 4,
     kcal: 580,
     protein: 58,
+    carbs: 59,
+    fat: 14,
+    fiber: 8,
+    sugar: 19,
+    salt: 1.4,
     minutes: 35,
     keeps: '3 Tage (Hüttenkäse + Gurke frisch dazu)',
     ingredients: [
@@ -79,6 +88,11 @@ export const RECIPES: Recipe[] = [
     portions: 4,
     kcal: 665,
     protein: 66,
+    carbs: 71,
+    fat: 11,
+    fiber: 11,
+    sugar: 14,
+    salt: 0.5,
     minutes: 45,
     keeps: '3–4 Tage',
     ingredients: [
@@ -101,8 +115,13 @@ export const RECIPES: Recipe[] = [
     title: 'Protein-Nudeln „Carbonara light“ mit Erbsen',
     tags: ['Meal Prep', 'Mittag'],
     portions: 5,
-    kcal: 625,
-    protein: 56,
+    kcal: 620,
+    protein: 55,
+    carbs: 66,
+    fat: 12,
+    fiber: 7,
+    sugar: 8,
+    salt: 0.9,
     minutes: 25,
     keeps: '3 Tage',
     ingredients: [
@@ -128,7 +147,12 @@ export const RECIPES: Recipe[] = [
     tags: ['Meal Prep', 'Abend', 'Auflauf'],
     portions: 4,
     kcal: 640,
-    protein: 63,
+    protein: 64,
+    carbs: 59,
+    fat: 16,
+    fiber: 10,
+    sugar: 9,
+    salt: 0.8,
     minutes: 50,
     keeps: '3–4 Tage',
     ingredients: [
@@ -154,6 +178,11 @@ export const RECIPES: Recipe[] = [
     portions: 4,
     kcal: 640,
     protein: 56,
+    carbs: 72,
+    fat: 13,
+    fiber: 5,
+    sugar: 6,
+    salt: 0.4,
     minutes: 30,
     keeps: '4 Tage (auch einfrierbar)',
     ingredients: [
@@ -178,6 +207,11 @@ export const RECIPES: Recipe[] = [
     portions: 2,
     kcal: 700,
     protein: 48,
+    carbs: 76,
+    fat: 20,
+    fiber: 5,
+    sugar: 11,
+    salt: 2.5,
     minutes: 25,
     keeps: '1–2 Tage (Fisch nicht länger)',
     ingredients: [
@@ -203,6 +237,11 @@ export const RECIPES: Recipe[] = [
     portions: 4,
     kcal: 640,
     protein: 60,
+    carbs: 66,
+    fat: 12,
+    fiber: 9,
+    sugar: 9,
+    salt: 2,
     minutes: 20,
     keeps: '2–3 Tage (Füllung getrennt lagern)',
     ingredients: [
@@ -226,6 +265,11 @@ export const RECIPES: Recipe[] = [
     portions: 4,
     kcal: 505,
     protein: 48,
+    carbs: 56,
+    fat: 7,
+    fiber: 10,
+    sugar: 20,
+    salt: 0.4,
     minutes: 10,
     keeps: '3–4 Tage',
     ingredients: [
@@ -249,6 +293,11 @@ export const RECIPES: Recipe[] = [
     portions: 4,
     kcal: 365,
     protein: 40,
+    carbs: 8,
+    fat: 18,
+    fiber: 2,
+    sugar: 6,
+    salt: 1.7,
     minutes: 30,
     keeps: '4 Tage',
     ingredients: [
@@ -273,6 +322,11 @@ export const RECIPES: Recipe[] = [
     portions: 2,
     kcal: 440,
     protein: 35,
+    carbs: 48,
+    fat: 10,
+    fiber: 6,
+    sugar: 16,
+    salt: 0.4,
     minutes: 15,
     keeps: '2 Tage (oder frisch)',
     ingredients: ['100 g Haferflocken', '2 Eier', '250 g Magerquark', '1 Banane', '½ Scoop Whey', '1 TL Backpulver'],

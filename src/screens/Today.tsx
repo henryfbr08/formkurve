@@ -4,6 +4,8 @@ import { addDays, formatLong, fromKey, todayKey } from '../lib/dates'
 import { kcalTarget, plannedRunOn, weekAvg } from '../lib/stats'
 import { WEEK_SCHEDULE, workoutById } from '../data/training'
 import { TARGETS } from '../data/nutrition'
+import { sumEntries } from '../lib/macros'
+import MacroOverview from './MacroOverview'
 import type { Tab } from '../App'
 import { applyUrlImport } from '../lib/urlImport'
 
@@ -23,9 +25,7 @@ export default function Today({ go }: { go: (t: Tab) => void }) {
   const run = plannedRunOn(data.runPlanStart, today)
   const runDone = run ? !!data.runs[run.key] : false
 
-  const food = data.food[today] ?? []
-  const kcal = food.reduce((a, f) => a + f.kcal, 0)
-  const protein = food.reduce((a, f) => a + f.protein, 0)
+  const totals = sumEntries(data.food[today] ?? [])
   const target = kcalTarget(today)
 
   const thisWeek = weekAvg(data.weights, today)
@@ -119,11 +119,10 @@ export default function Today({ go }: { go: (t: Tab) => void }) {
 
       <section className="card clickable" onClick={() => go('essen')}>
         <h2>Ernährung</h2>
-        <Bar label="Kalorien" value={kcal} max={target} unit="kcal" />
-        <Bar label="Protein" value={protein} max={TARGETS.protein} unit="g" />
+        <MacroOverview totals={totals} date={today} compact />
         <p className="hint">
-          Ziel heute: {target} kcal · {TARGETS.protein} g Protein
-          {target === TARGETS.weekendKcal && ' (Wochenende mit Familie)'}
+          Noch {Math.max(0, Math.round(target - totals.kcal))} kcal · {Math.max(0, Math.round(TARGETS.protein - totals.protein))} g Protein offen
+          {target === TARGETS.weekendKcal && ' (Wochenende)'} · Tippen für alle Nährwerte
         </p>
       </section>
     </div>

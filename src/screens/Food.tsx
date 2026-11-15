@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { uid, useStore } from '../lib/store'
 import { addDays, formatLong, isWeekend, todayKey } from '../lib/dates'
-import { kcalTarget } from '../lib/stats'
-import { FOODS, MEAL_PLAN, TARGETS, WEEKEND_RULES, type Food as FoodItem } from '../data/nutrition'
-import { Bar } from './Today'
+import { FOODS, MEAL_PLAN, TARGETS, WEEKEND_RULES, type Food as FoodItem, type Macros } from '../data/nutrition'
+import { EMPTY, round, scale, shortMacros, sumEntries } from '../lib/macros'
+import MacroOverview from './MacroOverview'
 import Scanner from './Scanner'
 import { RECIPES } from '../data/recipes'
 
@@ -12,7 +12,7 @@ export default function Food() {
   const [date, setDate] = useState(todayKey())
   const [selected, setSelected] = useState<FoodItem | null>(null)
   const [grams, setGrams] = useState('')
-  const [custom, setCustom] = useState({ name: '', kcal: '', protein: '' })
+  const [custom, setCustom] = useState({ name: '', kcal: '', protein: '', carbs: '', fat: '' })
   const [view, setView] = useState<'log' | 'plan' | 'rezepte'>('log')
   const [scanning, setScanning] = useState(false)
   const [openRecipe, setOpenRecipe] = useState<string | null>(null)
@@ -29,30 +29,32 @@ export default function Food() {
   }
 
   const entries = data.food[date] ?? []
-  const kcal = entries.reduce((a, f) => a + f.kcal, 0)
-  const protein = entries.reduce((a, f) => a + f.protein, 0)
-  const target = kcalTarget(date)
+  const totals = sumEntries(entries)
+  const [showAll, setShowAll] = useState(true)
 
-  function add(name: string, k: number, p: number) {
+  function add(name: string, m: Macros) {
     update((d) => {
-      d.food[date] = [...(d.food[date] ?? []), { id: uid(), name, kcal: Math.round(k), protein: Math.round(p * 10) / 10 }]
+      d.food[date] = [...(d.food[date] ?? []), { id: uid(), name, ...round(m) }]
       return d
     })
   }
 
+  const num = (v: string) => parseFloat(v.replace(',', '.')) || 0
+  const selectedGrams = selected ? num(grams) || selected.portion : 0
+  const preview = selected ? scale(selected, selectedGrams) : EMPTY
+
   function addSelected() {
     if (!selected) return
-    const g = parseFloat(grams.replace(',', '.')) || selected.portion
-    add(`${selected.name} (${g} g)`, (selected.kcal * g) / 100, (selected.protein * g) / 100)
+    add(`${selected.name} (${selectedGrams} g)`, preview)
     setSelected(null)
     setGrams('')
   }
 
   function addCustom() {
-    const k = parseFloat(custom.kcal)
+    const k = num(custom.kcal)
     if (!custom.name || !k) return
-    add(custom.name, k, parseFloat(custom.protein) || 0)
-    setCustom({ name: '', kcal: '', protein: '' })
+    add(custom.name, { ...EMPTY, kcal: k, protein: num(custom.protein), carbs: num(custom.carbs), fat: num(custom.fat) })
+    setCustom({ name: '', kcal: '', protein: '', carbs: '', fat: '' })
   }
 
   function remove(id: string) {
@@ -79,7 +81,7 @@ export default function Food() {
       {scanning && <Scanner onClose={() => setScanning(false)} onFound={onScanned} />}
 
       {view === 'rezepte' ? (
-        <RecipeList open={openRecipe} setOpen={setOpenRecipe} onAdd={(t, k, p) => { add(t, k, p); setDate(todayKey()); setView('log') }} />
+        <RecipeList open={openRecipe} setOpen={setOpenRecipe} onAdd={(t, m) => { add(t, m); setDate(todayKey()); setView('log') }} />
       ) : view === 'log' ? (
         <>
           <div className="day-nav">
@@ -93,9 +95,13 @@ export default function Food() {
           </div>
 
           <section className="card">
-            <Bar label="Kalorien" value={kcal} max={target} unit="kcal" />
-            <Bar label="Protein" value={protein} max={TARGETS.protein} unit="g" />
-            <p className="hint">Noch {Math.max(0, target - kcal)} kcal · {Math.max(0, TARGETS.protein - Math.round(protein))} g Protein offen</p>
+            <div className="meal-head">
+              <h2>Nährwerte</h2>
+              <button className="ghost small" onClick={() => setShowAll(!showAll)}>
+                {showAll ? 'Weniger' : 'Alle Werte'}
+              </button>
+            </div>
+            <MacroOverview totals={totals} date={date} compact={!showAll} />
           </section>
 
           <section className="card">
@@ -123,9 +129,15 @@ export default function Food() {
                 <input inputMode="decimal" value={grams} onChange={(e) => setGrams(e.target.value)} />
                 <span className="muted">g {selected.portionLabel && `(${selected.portionLabel} = ${selected.portion} g)`}</span>
                 <button className="primary" onClick={addSelected}>
-                  + {Math.round((selected.kcal * (parseFloat(grams) || 0)) / 100)} kcal
+                  + {Math.round(preview.kcal)} kcal
                 </button>
               </div>
+            )}
+            {selected && (
+              <p className="hint">
+                {Math.round(preview.protein)} g Protein · {Math.round(preview.carbs)} g KH · {Math.round(preview.fat)} g Fett ·{' '}
+                {Math.round(preview.fiber)} g Ballaststoffe · {Math.round(preview.sugar)} g Zucker
+              </p>
             )}
           </section>
 
@@ -135,6 +147,8 @@ export default function Food() {
               <input placeholder="Name (z. B. Familienessen)" value={custom.name} onChange={(e) => setCustom({ ...custom, name: e.target.value })} />
               <input inputMode="numeric" placeholder="kcal" value={custom.kcal} onChange={(e) => setCustom({ ...custom, kcal: e.target.value })} />
               <input inputMode="decimal" placeholder="Protein g" value={custom.protein} onChange={(e) => setCustom({ ...custom, protein: e.target.value })} />
+              <input inputMode="decimal" placeholder="KH g" value={custom.carbs} onChange={(e) => setCustom({ ...custom, carbs: e.target.value })} />
+              <input inputMode="decimal" placeholder="Fett g" value={custom.fat} onChange={(e) => setCustom({ ...custom, fat: e.target.value })} />
               <button className="primary" onClick={addCustom}>
                 Hinzufügen
               </button>
@@ -147,9 +161,13 @@ export default function Food() {
               <ul className="list">
                 {entries.map((e) => (
                   <li key={e.id} className="entry">
-                    <span>{e.name}</span>
+                    <span>
+                      {e.name}
+                      <br />
+                      <span className="muted small">{shortMacros(e)}</span>
+                    </span>
                     <span className="muted">
-                      {e.kcal} kcal · {e.protein} g P
+                      {e.kcal} kcal · {Math.round(e.protein)} g P
                     </span>
                     <button className="ghost small" onClick={() => remove(e.id)}>
                       ✕
@@ -170,6 +188,8 @@ export default function Food() {
               <li>Mo–Fr: {TARGETS.weekdayKcal} kcal</li>
               <li>Sa/So: ~{TARGETS.weekendKcal} kcal (Familienessen + langer Lauf)</li>
               <li>Protein: {TARGETS.protein} g · Fett: mind. {TARGETS.fatMin} g</li>
+              <li>Kohlenhydrate: ~{TARGETS.carbsWeekday} g (Wochenende ~{TARGETS.carbsWeekend} g)</li>
+              <li>Ballaststoffe: mind. {TARGETS.fiber} g · Zucker: max. ~{TARGETS.sugarMax} g · Salz: max. {TARGETS.saltMax} g</li>
               <li>3–4 Portionen Obst · 400 g+ Gemüse/Obst</li>
             </ul>
           </section>
@@ -187,12 +207,13 @@ export default function Food() {
                       {o.kcal} kcal · {o.protein} g P
                     </span>
                   </div>
+                  <p className="muted small">{shortMacros(o)} · {o.sugar} g Zucker</p>
                   <ul className="list small">
                     {o.items.map((it) => (
                       <li key={it}>{it}</li>
                     ))}
                   </ul>
-                  <button className="ghost small" onClick={() => { add(o.title, o.kcal, o.protein); setView('log'); setDate(todayKey()) }}>
+                  <button className="ghost small" onClick={() => { add(o.title, o); setView('log'); setDate(todayKey()) }}>
                     + Als gegessen eintragen
                   </button>
                 </div>
@@ -226,7 +247,7 @@ function RecipeList({
 }: {
   open: string | null
   setOpen: (id: string | null) => void
-  onAdd: (title: string, kcal: number, protein: number) => void
+  onAdd: (title: string, m: Macros) => void
 }) {
   const [filter, setFilter] = useState('Alle')
   const tags = ['Alle', 'Meal Prep', 'Frühstück', 'Mittag', 'Abend']
@@ -264,6 +285,14 @@ function RecipeList({
                   ))}
                   <span className="badge">🧊 {r.keeps}</span>
                 </div>
+                <div className="macro-grid">
+                  <span><b>{r.kcal}</b> kcal</span>
+                  <span><b>{r.protein}</b> g Protein</span>
+                  <span><b>{r.carbs}</b> g KH</span>
+                  <span><b>{r.fat}</b> g Fett</span>
+                  <span><b>{r.fiber}</b> g Ballastst.</span>
+                  <span><b>{r.sugar}</b> g Zucker</span>
+                </div>
                 <h3>Zutaten (für {r.portions} Portionen)</h3>
                 <ul className="list small">
                   {r.ingredients.map((i) => (
@@ -277,7 +306,7 @@ function RecipeList({
                   ))}
                 </ol>
                 {r.tip && <p className="hint">💡 {r.tip}</p>}
-                <button className="primary" onClick={() => onAdd(`${r.title} (1 Portion)`, r.kcal, r.protein)}>
+                <button className="primary" onClick={() => onAdd(`${r.title} (1 Portion)`, r)}>
                   + 1 Portion eintragen
                 </button>
               </div>

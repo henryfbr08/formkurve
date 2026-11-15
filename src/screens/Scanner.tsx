@@ -21,11 +21,17 @@ async function lookup(code: string): Promise<Food | null> {
   const kcal = n['energy-kcal_100g'] ?? (n['energy_100g'] ? n['energy_100g'] / 4.184 : null)
   if (kcal == null) return null
   const name = [p.brands?.split(',')[0], p.product_name_de || p.product_name].filter(Boolean).join(' – ') || `Produkt ${code}`
+  const r1 = (v: unknown) => Math.round((Number(v) || 0) * 10) / 10
   return {
     id: `ean-${code}`,
     name,
     kcal: Math.round(kcal),
-    protein: Math.round((n['proteins_100g'] ?? 0) * 10) / 10,
+    protein: r1(n['proteins_100g']),
+    carbs: r1(n['carbohydrates_100g']),
+    fat: r1(n['fat_100g']),
+    fiber: r1(n['fiber_100g']),
+    sugar: r1(n['sugars_100g']),
+    salt: Math.round((Number(n['salt_100g']) || 0) * 100) / 100,
     portion: Math.round(Number(p.serving_quantity) || 100),
   }
 }
