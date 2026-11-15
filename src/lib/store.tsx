@@ -24,6 +24,24 @@ export interface RunLog {
   minutes: number
   feeling?: number
   note?: string
+  shoeId?: string
+}
+
+export interface FreeRun extends RunLog {
+  id: string
+}
+
+export interface Shoe {
+  id: string
+  name: string
+  /** Kilometer, die der Schuh vor dem Eintragen schon hatte */
+  startKm: number
+}
+
+export interface SavedMeal {
+  id: string
+  name: string
+  items: FoodEntry[]
 }
 
 export interface FoodEntry {
@@ -71,6 +89,13 @@ export interface AppData {
   runPlan?: PlannedRun[]
   runDays?: Record<1 | 2 | 3, number>
   recipes?: Recipe[]
+  /** Läufe außerhalb des Plans */
+  freeRuns: FreeRun[]
+  shoes: Shoe[]
+  activeShoe?: string
+  /** gespeicherte Mahlzeiten-Vorlagen */
+  savedMeals: SavedMeal[]
+  lastBackup?: string
 }
 
 const STORAGE_KEY = 'formkurve-data-v1'
@@ -88,6 +113,9 @@ function initialData(): AppData {
     customFoods: [],
     water: {},
     settings: { ...DEFAULT_SETTINGS },
+    freeRuns: [],
+    shoes: [],
+    savedMeals: [],
   }
 }
 

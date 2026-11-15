@@ -4,6 +4,8 @@ import { formatShort, mondayOf, pace, todayKey, weekdayShort } from '../lib/date
 import { planWeek, runDate } from '../lib/stats'
 import { getRunDays, getRunPlan, runWeeks } from '../lib/plan'
 import { PACES, WEEK_NOTES, type PlannedRun, type RunType } from '../data/running'
+import RunExtras from './RunExtras'
+import { allRuns } from '../lib/insights'
 
 const TYPES: [RunType, string][] = [
   ['locker', 'Locker'],
@@ -36,7 +38,7 @@ export default function Running() {
   const [editing, setEditing] = useState(false)
 
   const doneRuns = plan.filter((r) => data.runs[r.key]).length
-  const totalKm = Object.values(data.runs).reduce((a, r) => a + r.km, 0)
+  const totalKm = allRuns(data).reduce((a, r) => a + r.km, 0)
 
   /* ----- Plan bearbeiten ----- */
   function editPlan(fn: (p: PlannedRun[]) => PlannedRun[] | void) {
@@ -221,6 +223,8 @@ export default function Running() {
         )
       })}
 
+      {!editing && <RunExtras />}
+
       {editing ? (
         <>
           <button className="primary wide" onClick={addWeek}>
@@ -270,7 +274,9 @@ function RunRow({ run, open, onToggle }: { run: PlannedRun; open: boolean; onTog
     const m = (parseInt(min) || 0) + (parseInt(sec) || 0) / 60
     if (!k || !m) return
     update((d) => {
-      d.runs[run.key] = { date: todayKey(), km: k, minutes: m, feeling: parseInt(feeling) || undefined }
+      // Datum: geplanter Tag, wenn er schon vorbei ist, sonst heute
+      const day = date <= todayKey() ? date : todayKey()
+      d.runs[run.key] = { date: d.runs[run.key]?.date ?? day, km: k, minutes: m, feeling: parseInt(feeling) || undefined, shoeId: d.runs[run.key]?.shoeId ?? d.activeShoe }
       return d
     })
     onToggle()

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { uid, useStore, type FoodEntry, type MealId } from '../lib/store'
+import { uid, useStore, type FoodEntry, type MealId, type SavedMeal } from '../lib/store'
 import { addDays, formatLong, isWeekend, todayKey } from '../lib/dates'
 import { FOODS, MEAL_PLAN, WEEKEND_RULES, type Food as FoodItem, type Macros } from '../data/nutrition'
 import { EMPTY, lineMacros, round, scale, shortMacros, sumEntries } from '../lib/macros'
@@ -179,6 +179,44 @@ export default function Food() {
     pickFood(food)
   }
 
+  /* ----- Zuletzt gegessen & Mahlzeiten-Vorlagen ----- */
+  const recents: FoodEntry[] = []
+  for (let i = 0; i < 14 && recents.length < 6; i++) {
+    for (const e of [...(data.food[addDays(todayKey(), -i)] ?? [])].reverse()) {
+      if (recents.length < 6 && !recents.some((r) => r.name === e.name && r.amount === e.amount)) recents.push(e)
+    }
+  }
+  const savedMeals = data.savedMeals ?? []
+  const [saveFor, setSaveFor] = useState<MealId | null>(null)
+  const [saveName, setSaveName] = useState('')
+  const [manageMeals, setManageMeals] = useState(false)
+
+  function readd(e: FoodEntry) {
+    update((d) => {
+      d.food[date] = [...(d.food[date] ?? []), { ...e, id: uid(), meal }]
+      return d
+    })
+  }
+
+  function saveMeal(from: MealId) {
+    const items = entries.filter((e) => (e.meal ?? 'snack') === from)
+    if (!saveName.trim() || !items.length) return
+    update((d) => {
+      d.savedMeals = [{ id: uid(), name: saveName.trim(), items }, ...(d.savedMeals ?? [])]
+      return d
+    })
+    setSaveFor(null)
+    setSaveName('')
+  }
+
+  function applySavedMeal(m: SavedMeal) {
+    update((d) => {
+      if (manageMeals) d.savedMeals = (d.savedMeals ?? []).filter((x) => x.id !== m.id)
+      else d.food[date] = [...(d.food[date] ?? []), ...m.items.map((e) => ({ ...e, id: uid(), meal }))]
+      return d
+    })
+  }
+
   const targets = getTargets(data.settings, date)
   const mode = MODES[data.settings.mode]
   const planKcal = MEAL_PLAN.reduce((a, s) => a + s.options[0].kcal, 0)
@@ -273,6 +311,43 @@ export default function Food() {
                 Scan
               </button>
             </div>
+
+            {!q && !sel && savedMeals.length > 0 && (
+              <>
+                <div className="meal-head">
+                  <p className="hint">Meine Mahlzeiten{manageMeals && ' (antippen zum Löschen)'}</p>
+                  <button className="ghost small" onClick={() => setManageMeals(!manageMeals)}>
+                    {manageMeals ? 'Fertig' : 'Verwalten'}
+                  </button>
+                </div>
+                <div className="food-grid">
+                  {savedMeals.map((m) => (
+                    <button key={m.id} className={`chip saved ${manageMeals ? 'danger' : ''}`} onClick={() => applySavedMeal(m)}>
+                      {manageMeals && '✕ '}
+                      {m.name} · {Math.round(sumEntries(m.items).kcal)} kcal
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {!q && !sel && recents.length > 0 && (
+              <>
+                <p className="hint">Zuletzt gegessen</p>
+                <div className="results">
+                  {recents.map((e) => (
+                    <button key={e.id} className="result row-result" onClick={() => readd(e)}>
+                      <span>
+                        {e.name}
+                        {e.amount != null && <span className="muted small"> · {e.amount} {e.unit === 'g' ? 'g' : 'Port.'}</span>}
+                      </span>
+                      <span className="muted small">+ {e.kcal} kcal</span>
+                    </button>
+                  ))}
+                </div>
+                <p className="hint">Alle Lebensmittel</p>
+              </>
+            )}
 
             {!q && (
               <div className="food-grid">
@@ -436,6 +511,25 @@ export default function Food() {
                     ))}
                   </ul>
                 )}
+                {list.length > 0 &&
+                  (saveFor === m.id ? (
+                    <div className="row">
+                      <input placeholder="Name der Vorlage" value={saveName} onChange={(e) => setSaveName(e.target.value)} />
+                      <button className="primary" onClick={() => saveMeal(m.id)}>
+                        Speichern
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      className="ghost small"
+                      onClick={() => {
+                        setSaveFor(m.id)
+                        setSaveName(m.label)
+                      }}
+                    >
+                      Als Vorlage speichern
+                    </button>
+                  ))}
                 {list.length === 0 && hasYesterday && (
                   <button className="ghost small" onClick={() => copyYesterday(m.id)}>
                     Wie gestern übernehmen

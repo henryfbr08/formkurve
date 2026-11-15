@@ -6,6 +6,7 @@ import { findWorkout, getSchedule, getWorkouts, slug } from '../lib/plan'
 import type { Exercise, Workout } from '../data/training'
 import { EXERCISE_LIBRARY } from '../data/exercises'
 import { IconTimer } from '../Icons'
+import { bestSet, isRecord, plannedSetsPerMuscle } from '../lib/insights'
 
 const DAYS: [number, string][] = [
   [1, 'Montag'],
@@ -226,6 +227,31 @@ export default function Training() {
           </button>
 
           <section className="card">
+            <h2>Plan-Check: Sätze pro Woche</h2>
+            {plannedSetsPerMuscle(data).map((m) => {
+              const min = m.muscle === 'Bauch & Rumpf' ? 6 : 10
+              const cls = m.sets >= min && m.sets <= 20 ? 'ok' : m.sets > 20 ? 'over' : 'low'
+              return (
+                <div className="bar" key={m.muscle}>
+                  <div className="bar-head">
+                    <span>{m.muscle}</span>
+                    <span>
+                      {m.sets} {m.sets < min ? '· wenig' : m.sets > 20 ? '· viel' : '· gut'}
+                    </span>
+                  </div>
+                  <div className="bar-track">
+                    <div className={`bar-fill ${cls}`} style={{ width: `${Math.min(100, (m.sets / 20) * 100)}%` }} />
+                  </div>
+                </div>
+              )
+            })}
+            <p className="hint">
+              Gezählt werden die direkten Sätze laut Wochenplan. Richtwert für Muskelaufbau: 10–20 pro Muskelgruppe und Woche. Für Bauch und
+              Rumpf reichen auch 6–10.
+            </p>
+          </section>
+
+          <section className="card">
             <h2>Wochenplan</h2>
             {DAYS.map(([day, label]) => (
               <label className="day-select" key={day}>
@@ -262,9 +288,17 @@ export default function Training() {
           {workout.exercises.map((ex) => {
             const last = lastSets(data, ex.id, today)
             const increase = shouldIncrease(ex, last?.sets)
+            const best = bestSet(data, ex.id, today)
+            const record = isRecord(sets[ex.id], best)
             return (
-              <section className="card" key={ex.id}>
+              <section className={`card ${record ? 'record' : ''}`} key={ex.id}>
                 <h2>{ex.name}</h2>
+                {best && (
+                  <p className="muted small">
+                    Bestleistung: {best.kg} kg × {best.reps} ({formatShort(best.date)}) · geschätzte Maximalkraft {Math.round(best.e)} kg
+                  </p>
+                )}
+                {record && <p className="badge ok block">Neue Bestleistung!</p>}
                 <p className="muted small">
                   {ex.sets} × {ex.repMin === ex.repMax ? ex.repMin : `${ex.repMin}–${ex.repMax}`} Wdh.
                   {last && (

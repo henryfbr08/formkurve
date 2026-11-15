@@ -5,6 +5,7 @@ import { plannedRunOn, weekAvg } from '../lib/stats'
 import { sumEntries } from '../lib/macros'
 import { getTargets, macroTargets, MODES } from '../lib/targets'
 import { findWorkout, getSchedule } from '../lib/plan'
+import { logStreak } from '../lib/insights'
 import type { Tab } from '../App'
 import { applyUrlImport } from '../lib/urlImport'
 import { IconCheck, IconDrop, IconDumbbell, IconRun } from '../Icons'
@@ -46,6 +47,7 @@ export default function Today({ go }: { go: (t: Tab) => void }) {
   const diff = thisWeek && lastWeek ? thisWeek - lastWeek : null
 
   const water = data.water?.[today] ?? 0
+  const streak = logStreak(data, today)
 
   const [clipMsg, setClipMsg] = useState('')
 
@@ -102,7 +104,10 @@ export default function Today({ go }: { go: (t: Tab) => void }) {
       <header className="hero-head">
         <span className="brand">FORMKURVE</span>
         <h1>{greeting()}</h1>
-        <p className="muted">{formatLong(today)}</p>
+        <p className="muted">
+          {formatLong(today)}
+          {streak >= 2 && <span className="badge streak">{streak} Tage in Folge getrackt</span>}
+        </p>
       </header>
 
       <section className="card week-strip">

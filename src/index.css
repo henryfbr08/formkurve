@@ -1270,3 +1270,117 @@ textarea:focus {
 .run-row input.ex-name {
   margin-top: 6px;
 }
+
+/* ---------- Auswertungen ---------- */
+.badge.block {
+  display: block;
+  border-radius: 10px;
+  padding: 7px 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.badge.streak {
+  margin-left: 8px;
+  background: rgba(255, 138, 61, 0.15);
+  color: var(--accent-2);
+}
+
+.card.record {
+  border-color: rgba(52, 211, 153, 0.5);
+}
+
+.bar-fill.low {
+  background: var(--accent);
+}
+
+.record-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.result.row-result {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chip.saved {
+  border-color: rgba(78, 168, 222, 0.5) !important;
+}
+
+.chip.danger {
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
+}
+
+.meal-head .hint {
+  margin: 10px 0 6px;
+}
+
+table.report {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+table.report th {
+  text-align: right;
+  font-weight: 500;
+  font-size: 12px;
+  color: var(--muted);
+  padding-bottom: 6px;
+}
+
+table.report td {
+  padding: 7px 0;
+  border-top: 1px solid var(--border);
+  text-align: right;
+}
+
+table.report td:first-child {
+  text-align: left;
+  color: var(--muted);
+}
+
+table.report td:nth-child(2) {
+  font-weight: 650;
+}
+
+.compare,
+.photo-grid {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.compare {
+  grid-template-columns: 1fr 1fr;
+}
+
+.photo-grid {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+figure {
+  margin: 0;
+  cursor: pointer;
+}
+
+figure img {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border-radius: 10px;
+  display: block;
+  background: var(--card-2);
+}
+
+figcaption {
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+  margin-top: 3px;
+}

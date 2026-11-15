@@ -4,6 +4,9 @@ import { useStore, type AppData } from '../lib/store'
 import { addDays, formatShort, mondayOf, todayKey } from '../lib/dates'
 import { rollingAvg, weekAvg } from '../lib/stats'
 import { getWorkouts } from '../lib/plan'
+import { daysBetween } from '../lib/dates'
+import WeekReport from './WeekReport'
+import Photos from './Photos'
 
 export default function Progress() {
   const { data, update, replaceAll } = useStore()
@@ -58,6 +61,10 @@ export default function Progress() {
     a.href = URL.createObjectURL(blob)
     a.download = `formkurve-backup-${today}.json`
     a.click()
+    update((d) => {
+      d.lastBackup = today
+      return d
+    })
     URL.revokeObjectURL(a.href)
   }
 
@@ -89,11 +96,16 @@ export default function Progress() {
         .filter((p) => p.kg > 0)
     : []
 
+  const hasData = Object.keys(data.weights).length + Object.keys(data.workouts).length + Object.keys(data.food).length > 5
+  const backupDue = hasData && (!data.lastBackup || daysBetween(data.lastBackup, today) > 14)
+
   const waistEntries = Object.entries(data.waist).sort(([a], [b]) => (a < b ? 1 : -1))
 
   return (
     <div className="screen">
       <h1>Fortschritt</h1>
+
+      <WeekReport />
 
       <section className="card">
         <div className="stats">
@@ -223,8 +235,11 @@ export default function Progress() {
         )}
       </section>
 
-      <section className="card">
+      <Photos />
+
+      <section className={`card ${backupDue ? 'current' : ''}`}>
         <h2>Daten sichern</h2>
+        {backupDue && <p className="badge up">{data.lastBackup ? `Letztes Backup vor ${daysBetween(data.lastBackup, today)} Tagen.` : 'Du hast noch kein Backup gemacht.'} Jetzt sichern!</p>}
         <p className="hint">Alle Daten liegen nur auf diesem Gerät. Mach ab und zu ein Backup.</p>
         <div className="row wrap">
           <button className="primary" onClick={exportData}>

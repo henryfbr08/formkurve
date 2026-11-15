@@ -6,6 +6,7 @@ import type { Recipe } from '../data/recipes'
 import { getRecipes } from '../lib/plan'
 import RecipeForm, { RECIPE_TAGS } from './RecipeForm'
 import { getTargets, MODES, type Mode } from '../lib/targets'
+import { estimateTdee } from '../lib/insights'
 
 const num = (v: string) => parseFloat(v.replace(',', '.')) || 0
 
@@ -213,6 +214,7 @@ export function Goals() {
   const weekday = getTargets(s, mondayOf(today))
   const weekend = getTargets(s, addDays(mondayOf(today), 5))
   const m = MODES[s.mode]
+  const est = estimateTdee(data, today)
   const [maint, setMaint] = useState(String(s.maintenance))
   const [protein, setProtein] = useState(s.protein != null ? String(s.protein) : '')
   const [fat, setFat] = useState(s.fat != null ? String(s.fat) : '')
@@ -278,6 +280,76 @@ export function Goals() {
             Ballaststoffe: mind. {weekday.fiber} g · Zucker: max. ~{weekday.sugarMax} g · Salz: max. {weekday.saltMax} g
           </li>
         </ul>
+      </section>
+
+      <section className="card">
+        <h2>Dein echter Verbrauch</h2>
+        {est.ready ? (
+          <>
+            <div className="stats">
+              <div className="stat">
+                <span className="stat-value">{est.tdee} kcal</span>
+                <span className="stat-label">geschätzter Verbrauch</span>
+              </div>
+              <div className="stat">
+                <span className="stat-value">
+                  {est.trendPerWeek! > 0 ? '+' : ''}
+                  {est.trendPerWeek!.toFixed(2).replace('.', ',')} kg
+                </span>
+                <span className="stat-label">Trend pro Woche</span>
+              </div>
+            </div>
+            <p className="hint">
+              Berechnet aus {est.weighIns} Wiegungen und {est.intakeDays} getrackten Tagen der letzten 4 Wochen (Ø {est.avgIntake} kcal
+              gegessen). Eingestellt sind {s.maintenance} kcal.
+            </p>
+            {Math.abs(est.tdee! - s.maintenance) >= 100 ? (
+              <button
+                className="primary wide"
+                onClick={() => {
+                  update((d) => {
+                    d.settings.maintenance = est.tdee!
+                    return d
+                  })
+                  setMaint(String(est.tdee))
+                }}
+              >
+                {est.tdee} kcal als Erhaltungskalorien übernehmen
+              </button>
+            ) : (
+              <p className="hint">Das passt zu deiner Einstellung. Nichts zu ändern.</p>
+            )}
+            <p className="hint">Die Schätzung stimmt nur, wenn du an den gezählten Tagen wirklich alles eingetragen hast, auch am Wochenende.</p>
+          </>
+        ) : (
+          <>
+            <p className="hint">
+              Die App kann deinen Verbrauch aus deinen eigenen Daten berechnen, sobald genug da ist. Das ist genauer als jede Formel.
+            </p>
+            <div className="bar">
+              <div className="bar-head">
+                <span>Wiegungen (letzte 4 Wochen, über mind. 14 Tage)</span>
+                <span>
+                  {est.weighIns} / {est.needWeighIns}
+                </span>
+              </div>
+              <div className="bar-track">
+                <div className="bar-fill ok" style={{ width: `${Math.min(100, (est.weighIns / est.needWeighIns) * 100)}%` }} />
+              </div>
+            </div>
+            <div className="bar">
+              <div className="bar-head">
+                <span>Vollständig getrackte Tage</span>
+                <span>
+                  {est.intakeDays} / {est.needIntakeDays}
+                </span>
+              </div>
+              <div className="bar-track">
+                <div className="bar-fill ok" style={{ width: `${Math.min(100, (est.intakeDays / est.needIntakeDays) * 100)}%` }} />
+              </div>
+            </div>
+          </>
+        )}
       </section>
 
       <section className="card">
