@@ -5,6 +5,7 @@ import { kcalTarget, plannedRunOn, weekAvg } from '../lib/stats'
 import { WEEK_SCHEDULE, workoutById } from '../data/training'
 import { TARGETS } from '../data/nutrition'
 import type { Tab } from '../App'
+import { applyUrlImport } from '../lib/urlImport'
 
 export default function Today({ go }: { go: (t: Tab) => void }) {
   const { data, update } = useStore()
@@ -29,6 +30,26 @@ export default function Today({ go }: { go: (t: Tab) => void }) {
 
   const thisWeek = weekAvg(data.weights, today)
   const lastWeek = weekAvg(data.weights, addDays(today, -7))
+
+  const [clipMsg, setClipMsg] = useState('')
+
+  /** Kurzbefehl kopiert z. B. "weight=94.2" in die Zwischenablage → hier einfügen */
+  async function pasteFromShortcut() {
+    try {
+      const text = (await navigator.clipboard.readText()).trim()
+      const query = text.includes('?') ? text.slice(text.indexOf('?')) : `?${text}`
+      let msg = ''
+      update((d) => {
+        const res = applyUrlImport(d, query)
+        if (!res) return d
+        msg = res.message
+        return res.data
+      })
+      setTimeout(() => setClipMsg(msg || 'Nichts Passendes in der Zwischenablage gefunden.'), 0)
+    } catch {
+      setClipMsg('Zwischenablage konnte nicht gelesen werden.')
+    }
+  }
 
   function saveWeight() {
     const v = parseFloat(weightInput.replace(',', '.'))
@@ -66,6 +87,10 @@ export default function Today({ go }: { go: (t: Tab) => void }) {
           />
         </div>
         <p className="hint">Morgens nach der Toilette wiegen. Ziel: −0,5 bis −0,8 kg pro Woche (Wochenschnitt).</p>
+        <button className="ghost small" onClick={pasteFromShortcut}>
+          📋 Aus Health-Kurzbefehl einfügen
+        </button>
+        {clipMsg && <p className="hint">{clipMsg}</p>}
       </section>
 
       <section className="card clickable" onClick={() => go('training')}>
