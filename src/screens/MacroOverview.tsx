@@ -1,9 +1,11 @@
 import type { Macros } from '../data/nutrition'
-import { targetsFor } from '../lib/macros'
+import { useStore } from '../lib/store'
+import { macroTargets } from '../lib/targets'
 
 /** Nährwert-Übersicht eines Tages: Balken für alle Werte + Makro-Verteilung */
 export default function MacroOverview({ totals, date, compact = false }: { totals: Macros; date: string; compact?: boolean }) {
-  const targets = targetsFor(date)
+  const { data } = useStore()
+  const targets = macroTargets(data.settings, date)
   const shown = compact ? targets.filter((t) => ['kcal', 'protein', 'carbs', 'fat'].includes(t.key)) : targets
 
   const kP = totals.protein * 4

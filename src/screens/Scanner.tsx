@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Food } from '../data/nutrition'
+import { lookupBarcode } from '../lib/off'
 
 interface Props {
   onClose: () => void
@@ -8,33 +9,6 @@ interface Props {
 }
 
 type Status = 'starting' | 'scanning' | 'loading' | 'notfound' | 'error'
-
-/** Nährwerte über Open Food Facts (kostenlos, ohne Konto) */
-async function lookup(code: string): Promise<Food | null> {
-  const url = `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(code)}.json?fields=product_name,product_name_de,brands,nutriments,serving_quantity`
-  const res = await fetch(url)
-  if (!res.ok) return null
-  const json = await res.json()
-  if (json.status !== 1 || !json.product) return null
-  const p = json.product
-  const n = p.nutriments ?? {}
-  const kcal = n['energy-kcal_100g'] ?? (n['energy_100g'] ? n['energy_100g'] / 4.184 : null)
-  if (kcal == null) return null
-  const name = [p.brands?.split(',')[0], p.product_name_de || p.product_name].filter(Boolean).join(' – ') || `Produkt ${code}`
-  const r1 = (v: unknown) => Math.round((Number(v) || 0) * 10) / 10
-  return {
-    id: `ean-${code}`,
-    name,
-    kcal: Math.round(kcal),
-    protein: r1(n['proteins_100g']),
-    carbs: r1(n['carbohydrates_100g']),
-    fat: r1(n['fat_100g']),
-    fiber: r1(n['fiber_100g']),
-    sugar: r1(n['sugars_100g']),
-    salt: Math.round((Number(n['salt_100g']) || 0) * 100) / 100,
-    portion: Math.round(Number(p.serving_quantity) || 100),
-  }
-}
 
 export default function Scanner({ onClose, onFound }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -49,7 +23,7 @@ export default function Scanner({ onClose, onFound }: Props) {
     setLastCode(code)
     setStatus('loading')
     try {
-      const food = await lookup(code)
+      const food = await lookupBarcode(code)
       if (food) {
         onFound(food)
         return
@@ -72,6 +46,7 @@ export default function Scanner({ onClose, onFound }: Props) {
 
     async function start() {
       try {
+        // Scanner-Bibliothek erst bei Bedarf laden
         const { BarcodeDetector } = await import('barcode-detector/ponyfill')
         const detector = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'upc_e'] })
         stream = await navigator.mediaDevices.getUserMedia({

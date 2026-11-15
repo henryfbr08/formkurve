@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { nextMonday, todayKey } from './dates'
 import type { Food } from '../data/nutrition'
+import type { Workout } from '../data/training'
+import { DEFAULT_SETTINGS, type Settings } from './targets'
 
 export interface SetEntry {
   kg: number | null
@@ -33,7 +35,13 @@ export interface FoodEntry {
   fiber?: number
   sugar?: number
   salt?: number
+  meal?: MealId
+  /** Menge, auf die sich die Nährwerte beziehen (zum späteren Ändern) */
+  amount?: number
+  unit?: 'g' | 'Portion'
 }
+
+export type MealId = 'fruehstueck' | 'mittag' | 'abend' | 'snack'
 
 export interface AppData {
   version: 1
@@ -49,6 +57,14 @@ export interface AppData {
   food: Record<string, FoodEntry[]>
   /** per Barcode gescannte / eigene Produkte */
   customFoods: Food[]
+  /** getrunkenes Wasser pro Tag in ml */
+  water: Record<string, number>
+  /** Ernährungsziel (Abnehmen / Halten / Aufbauen) */
+  settings: Settings
+  /** eigener Trainingsplan; fehlt = Vorgabe */
+  plan?: Workout[]
+  /** Wochentag (0 = So) → Workout-ID; fehlt = Vorgabe */
+  schedule?: Record<number, string | null>
 }
 
 const STORAGE_KEY = 'formkurve-data-v1'
@@ -64,6 +80,8 @@ function initialData(): AppData {
     runs: {},
     food: {},
     customFoods: [],
+    water: {},
+    settings: { ...DEFAULT_SETTINGS },
   }
 }
 

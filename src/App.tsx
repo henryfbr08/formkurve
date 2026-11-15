@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
+import { IconChart, IconDumbbell, IconFood, IconHome, IconRun } from './Icons'
 import { useStore } from './lib/store'
 import { applyUrlImport } from './lib/urlImport'
 import Today from './screens/Today'
@@ -9,12 +10,12 @@ import Progress from './screens/Progress'
 
 export type Tab = 'heute' | 'training' | 'laufen' | 'essen' | 'fortschritt'
 
-const TABS: { id: Tab; label: string; icon: string }[] = [
-  { id: 'heute', label: 'Heute', icon: '🏠' },
-  { id: 'training', label: 'Training', icon: '🏋️' },
-  { id: 'laufen', label: 'Laufen', icon: '🏃' },
-  { id: 'essen', label: 'Essen', icon: '🍽️' },
-  { id: 'fortschritt', label: 'Fortschritt', icon: '📈' },
+const TABS: { id: Tab; label: string; icon: ReactNode }[] = [
+  { id: 'heute', label: 'Heute', icon: <IconHome /> },
+  { id: 'training', label: 'Training', icon: <IconDumbbell /> },
+  { id: 'laufen', label: 'Laufen', icon: <IconRun /> },
+  { id: 'essen', label: 'Essen', icon: <IconFood /> },
+  { id: 'fortschritt', label: 'Fortschritt', icon: <IconChart /> },
 ]
 
 export default function App() {

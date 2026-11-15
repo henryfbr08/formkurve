@@ -3,6 +3,7 @@ import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YA
 import { useStore, type AppData } from '../lib/store'
 import { addDays, formatShort, mondayOf, todayKey } from '../lib/dates'
 import { rollingAvg, weekAvg } from '../lib/stats'
+import { getWorkouts } from '../lib/plan'
 
 export default function Progress() {
   const { data, update, replaceAll } = useStore()
@@ -71,6 +72,23 @@ export default function Progress() {
     }
   }
 
+  // Kraftverlauf: schwerster Satz pro Einheit
+  const logs = Object.values(data.workouts).sort((a, b) => (a.date < b.date ? -1 : 1))
+  const exNames = new Map<string, string>()
+  getWorkouts(data).forEach((w) => w.exercises.forEach((e) => exNames.set(e.id, e.name)))
+  const exIds = [...new Set(logs.flatMap((l) => Object.keys(l.sets).filter((id) => l.sets[id].some((x) => x.kg))))]
+  const [exSel, setExSel] = useState('')
+  const exId = exIds.includes(exSel) ? exSel : exIds[0]
+  const strength = exId
+    ? logs
+        .filter((l) => l.sets[exId])
+        .map((l) => {
+          const best = l.sets[exId].reduce((a, x) => ((x.kg ?? 0) > (a.kg ?? 0) ? x : a), { kg: 0, reps: 0 } as { kg: number | null; reps: number | null })
+          return { label: formatShort(l.date), kg: best.kg ?? 0, reps: best.reps ?? 0 }
+        })
+        .filter((p) => p.kg > 0)
+    : []
+
   const waistEntries = Object.entries(data.waist).sort(([a], [b]) => (a < b ? 1 : -1))
 
   return (
@@ -111,20 +129,54 @@ export default function Progress() {
           <div style={{ width: '100%', height: 220 }}>
             <ResponsiveContainer>
               <LineChart data={series} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
-                <CartesianGrid stroke="#2a2a2e" vertical={false} />
-                <XAxis dataKey="label" stroke="#8a8a92" fontSize={11} />
+                <CartesianGrid stroke="#272b35" vertical={false} />
+                <XAxis dataKey="label" stroke="#8d93a1" fontSize={11} />
                 <YAxis
                   domain={[(min: number) => Math.floor(min - 0.5), (max: number) => Math.ceil(max + 0.5)]}
                   allowDecimals={false}
-                  stroke="#8a8a92"
+                  stroke="#8d93a1"
                   fontSize={11}
                 />
-                <Tooltip contentStyle={{ background: '#1c1c20', border: '1px solid #333', borderRadius: 8 }} />
-                <Line type="monotone" dataKey="weight" name="Gewicht" stroke="#8a8a92" strokeWidth={1} dot={{ r: 2 }} />
-                <Line type="monotone" dataKey="avg" name="Ø 7 Tage" stroke="#e5383b" strokeWidth={2.5} dot={false} />
+                <Tooltip contentStyle={{ background: '#15171d', border: '1px solid #272b35', borderRadius: 10 }} />
+                <Line type="monotone" dataKey="weight" name="Gewicht" stroke="#8d93a1" strokeWidth={1} dot={{ r: 2 }} />
+                <Line type="monotone" dataKey="avg" name="Ø 7 Tage" stroke="#ff4d4f" strokeWidth={2.5} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>
+        )}
+      </section>
+
+      <section className="card">
+        <h2>Kraftverlauf</h2>
+        {exIds.length === 0 ? (
+          <p className="muted">Sobald du Trainings mit Gewichten speicherst, siehst du hier deinen Verlauf pro Übung.</p>
+        ) : (
+          <>
+            <select value={exId} onChange={(e) => setExSel(e.target.value)} style={{ width: '100%' }}>
+              {exIds.map((id) => (
+                <option key={id} value={id}>
+                  {exNames.get(id) ?? id}
+                </option>
+              ))}
+            </select>
+            {strength.length < 2 ? (
+              <p className="hint">
+                Bisher {strength.length === 1 ? `ein Eintrag: ${strength[0].kg} kg × ${strength[0].reps}` : 'kein Eintrag'}. Ab zwei Einheiten erscheint die Kurve.
+              </p>
+            ) : (
+              <div style={{ width: '100%', height: 200, marginTop: 10 }}>
+                <ResponsiveContainer>
+                  <LineChart data={strength} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+                    <CartesianGrid stroke="#272b35" vertical={false} />
+                    <XAxis dataKey="label" stroke="#8d93a1" fontSize={11} />
+                    <YAxis domain={[(min: number) => Math.floor(min - 2.5), (max: number) => Math.ceil(max + 2.5)]} allowDecimals={false} stroke="#8d93a1" fontSize={11} />
+                    <Tooltip contentStyle={{ background: '#15171d', border: '1px solid #272b35', borderRadius: 10 }} />
+                    <Line type="monotone" dataKey="kg" name="Schwerster Satz (kg)" stroke="#34d399" strokeWidth={2.5} dot={{ r: 3 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </>
         )}
       </section>
 
