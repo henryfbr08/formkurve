@@ -4,6 +4,8 @@ import { addDays, formatLong, isWeekend, todayKey } from '../lib/dates'
 import { kcalTarget } from '../lib/stats'
 import { FOODS, MEAL_PLAN, TARGETS, WEEKEND_RULES, type Food as FoodItem } from '../data/nutrition'
 import { Bar } from './Today'
+import Scanner from './Scanner'
+import { RECIPES } from '../data/recipes'
 
 export default function Food() {
   const { data, update } = useStore()
@@ -11,7 +13,20 @@ export default function Food() {
   const [selected, setSelected] = useState<FoodItem | null>(null)
   const [grams, setGrams] = useState('')
   const [custom, setCustom] = useState({ name: '', kcal: '', protein: '' })
-  const [view, setView] = useState<'log' | 'plan'>('log')
+  const [view, setView] = useState<'log' | 'plan' | 'rezepte'>('log')
+  const [scanning, setScanning] = useState(false)
+  const [openRecipe, setOpenRecipe] = useState<string | null>(null)
+  const myFoods = data.customFoods ?? []
+
+  function onScanned(food: FoodItem) {
+    update((d) => {
+      d.customFoods = [food, ...(d.customFoods ?? []).filter((f) => f.id !== food.id)].slice(0, 40)
+      return d
+    })
+    setScanning(false)
+    setSelected(food)
+    setGrams(String(food.portion))
+  }
 
   const entries = data.food[date] ?? []
   const kcal = entries.reduce((a, f) => a + f.kcal, 0)
@@ -57,9 +72,15 @@ export default function Food() {
         <button className={`chip ${view === 'plan' ? 'active' : ''}`} onClick={() => setView('plan')}>
           Mein Plan
         </button>
+        <button className={`chip ${view === 'rezepte' ? 'active' : ''}`} onClick={() => setView('rezepte')}>
+          Rezepte
+        </button>
       </div>
+      {scanning && <Scanner onClose={() => setScanning(false)} onFound={onScanned} />}
 
-      {view === 'log' ? (
+      {view === 'rezepte' ? (
+        <RecipeList open={openRecipe} setOpen={setOpenRecipe} onAdd={(t, k, p) => { add(t, k, p); setDate(todayKey()); setView('log') }} />
+      ) : view === 'log' ? (
         <>
           <div className="day-nav">
             <button className="ghost" onClick={() => setDate(addDays(date, -1))}>
@@ -79,8 +100,12 @@ export default function Food() {
 
           <section className="card">
             <h2>Schnell hinzufügen</h2>
+            <button className="primary wide" onClick={() => setScanning(true)}>
+              📷 Barcode scannen
+            </button>
+            {myFoods.length > 0 && <p className="hint">Meine Produkte</p>}
             <div className="food-grid">
-              {FOODS.map((f) => (
+              {[...myFoods, ...FOODS].map((f) => (
                 <button
                   key={f.id}
                   className={`chip ${selected?.id === f.id ? 'active' : ''}`}
@@ -191,5 +216,76 @@ function WeekendCard() {
         ))}
       </ul>
     </section>
+  )
+}
+
+function RecipeList({
+  open,
+  setOpen,
+  onAdd,
+}: {
+  open: string | null
+  setOpen: (id: string | null) => void
+  onAdd: (title: string, kcal: number, protein: number) => void
+}) {
+  const [filter, setFilter] = useState('Alle')
+  const tags = ['Alle', 'Meal Prep', 'Frühstück', 'Mittag', 'Abend']
+  const list = filter === 'Alle' ? RECIPES : RECIPES.filter((r) => r.tags.includes(filter))
+  return (
+    <>
+      <div className="chips">
+        {tags.map((t) => (
+          <button key={t} className={`chip ${filter === t ? 'active' : ''}`} onClick={() => setFilter(t)}>
+            {t}
+          </button>
+        ))}
+      </div>
+      {list.map((r) => {
+        const isOpen = open === r.id
+        return (
+          <section className="card" key={r.id}>
+            <button className="week-head" onClick={() => setOpen(isOpen ? null : r.id)}>
+              <span style={{ textAlign: 'left' }}>
+                <strong>{r.title}</strong>
+                <br />
+                <span className="muted small">
+                  {r.kcal} kcal · {r.protein} g P pro Portion · {r.portions} Portionen · {r.minutes} Min.
+                </span>
+              </span>
+              <span className="muted">{isOpen ? '▲' : '▼'}</span>
+            </button>
+            {isOpen && (
+              <div className="recipe">
+                <div className="tags">
+                  {r.tags.map((t) => (
+                    <span className="badge" key={t}>
+                      {t}
+                    </span>
+                  ))}
+                  <span className="badge">🧊 {r.keeps}</span>
+                </div>
+                <h3>Zutaten (für {r.portions} Portionen)</h3>
+                <ul className="list small">
+                  {r.ingredients.map((i) => (
+                    <li key={i}>{i}</li>
+                  ))}
+                </ul>
+                <h3>Zubereitung</h3>
+                <ol className="list small">
+                  {r.steps.map((s) => (
+                    <li key={s}>{s}</li>
+                  ))}
+                </ol>
+                {r.tip && <p className="hint">💡 {r.tip}</p>}
+                <button className="primary" onClick={() => onAdd(`${r.title} (1 Portion)`, r.kcal, r.protein)}>
+                  + 1 Portion eintragen
+                </button>
+              </div>
+            )}
+          </section>
+        )
+      })}
+      <p className="hint">Nährwerte pro Portion, aus Rohgewichten berechnet und gerundet.</p>
+    </>
   )
 }

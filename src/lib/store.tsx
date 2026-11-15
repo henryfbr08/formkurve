@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
 import { nextMonday, todayKey } from './dates'
+import type { Food } from '../data/nutrition'
 
 export interface SetEntry {
   kg: number | null
@@ -40,6 +41,8 @@ export interface AppData {
   /** key = PlannedRun.key */
   runs: Record<string, RunLog>
   food: Record<string, FoodEntry[]>
+  /** per Barcode gescannte / eigene Produkte */
+  customFoods: Food[]
 }
 
 const STORAGE_KEY = 'formkurve-data-v1'
@@ -54,6 +57,7 @@ function initialData(): AppData {
     workouts: {},
     runs: {},
     food: {},
+    customFoods: [],
   }
 }
 
