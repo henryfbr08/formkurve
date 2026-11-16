@@ -1384,3 +1384,51 @@ figcaption {
   text-align: center;
   margin-top: 3px;
 }
+
+/* ---------- Vorschlag & Erholung ---------- */
+.suggest {
+  font-size: 13.5px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--card-2);
+  border-left: 3px solid var(--blue);
+}
+
+.suggest.up {
+  border-left-color: var(--warn);
+  background: rgba(251, 191, 36, 0.1);
+}
+
+.recovery {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.rec {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--card-2);
+  border-left: 3px solid var(--border);
+  font-size: 14px;
+}
+
+.rec span {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.rec.fresh {
+  border-left-color: var(--good);
+}
+
+.rec.mid {
+  border-left-color: var(--warn);
+}
+
+.rec.tired {
+  border-left-color: var(--accent);
+}

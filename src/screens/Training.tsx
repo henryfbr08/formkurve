@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import { uid, useStore, type AppData, type SetEntry } from '../lib/store'
 import { formatShort, fromKey, todayKey } from '../lib/dates'
-import { lastSets, shouldIncrease } from '../lib/stats'
+import { lastSets } from '../lib/stats'
 import { findWorkout, getSchedule, getWorkouts, slug } from '../lib/plan'
 import type { Exercise, Workout } from '../data/training'
 import { EXERCISE_LIBRARY } from '../data/exercises'
 import { IconTimer } from '../Icons'
-import { bestSet, isRecord, plannedSetsPerMuscle } from '../lib/insights'
+import { bestSet, isRecord, muscleRecovery, plannedSetsPerMuscle, suggestNext } from '../lib/insights'
 
 const DAYS: [number, string][] = [
   [1, 'Montag'],
@@ -287,7 +287,7 @@ export default function Training() {
           {workout.exercises.length === 0 && <p className="muted">Noch keine Übungen. Tippe oben auf „Plan bearbeiten“.</p>}
           {workout.exercises.map((ex) => {
             const last = lastSets(data, ex.id, today)
-            const increase = shouldIncrease(ex, last?.sets)
+            const sug = suggestNext(ex, last?.sets)
             const best = bestSet(data, ex.id, today)
             const record = isRecord(sets[ex.id], best)
             return (
@@ -307,7 +307,11 @@ export default function Training() {
                     </>
                   )}
                 </p>
-                {increase && <p className="badge up">Alle Sätze am oberen Ende geschafft: Gewicht erhöhen!</p>}
+                {sug && (
+                  <p className={`suggest ${sug.up ? 'up' : ''}`}>
+                    <strong>Vorschlag heute:</strong> {sug.text}
+                  </p>
+                )}
                 {ex.hint && <p className="hint">{ex.hint}</p>}
                 <div className="sets">
                   {Array.from({ length: ex.sets }).map((_, i) => {
@@ -318,7 +322,7 @@ export default function Training() {
                         <span className="set-no">{i + 1}</span>
                         <input
                           inputMode="decimal"
-                          placeholder={prev?.kg != null ? `${prev.kg}` : 'kg'}
+                          placeholder={sug ? `${sug.kg}` : prev?.kg != null ? `${prev.kg}` : 'kg'}
                           value={s?.kg ?? ''}
                           onChange={(e) => setValue(ex.id, i, 'kg', e.target.value)}
                         />
@@ -343,6 +347,24 @@ export default function Training() {
               {saved ? 'Gespeichert ✓' : existing ? 'Änderungen speichern' : 'Training speichern'}
             </button>
           )}
+
+          <section className="card">
+            <h2>Erholung</h2>
+            <div className="recovery">
+              {muscleRecovery(data, today).map((m) => (
+                <div className={`rec ${m.state}`} key={m.muscle}>
+                  <strong>{m.muscle}</strong>
+                  <span>
+                    {m.state === 'none' && 'noch kein Training'}
+                    {m.state === 'tired' && (m.days === 0 ? 'heute trainiert' : 'gestern trainiert')}
+                    {m.state === 'mid' && 'vor 2 Tagen · fast erholt'}
+                    {m.state === 'fresh' && `vor ${m.days} Tagen · erholt`}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <p className="hint">Faustregel: Ein Muskel braucht nach hartem Training etwa 48–72 Stunden. Schlaf und Muskelkater kann die App nicht messen.</p>
+          </section>
 
           {history.length > 0 && (
             <section className="card">

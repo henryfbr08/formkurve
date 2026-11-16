@@ -187,3 +187,46 @@ export function weekReport(data: AppData, anyDay: string) {
     weight: weekAvg(data.weights, mon),
   }
 }
+
+/* ---------- Gewichts-Vorschlag (Idee von MCI) ---------- */
+
+export function suggestNext(
+  ex: { sets: number; repMin: number; repMax: number },
+  last: SetEntry[] | undefined,
+): { kg: number; text: string; up: boolean } | null {
+  const done = (last ?? []).filter((s) => s.kg && s.reps) as { kg: number; reps: number }[]
+  if (!done.length) return null
+  const top = Math.max(...done.map((s) => s.kg))
+  const de = (n: number) => String(n).replace(".", ",")
+  const reps = ex.repMin === ex.repMax ? `${ex.repMin}` : `${ex.repMin}–${ex.repMax}`
+  const allTop = done.length >= ex.sets && done.slice(0, ex.sets).every((s) => s.reps >= ex.repMax)
+  if (allTop) {
+    const next = top + (top < 20 ? 1 : 2.5)
+    return { kg: next, up: true, text: `${de(next)} kg × ${reps}. Letztes Mal hast du alle Sätze oben geschafft, also steigern.` }
+  }
+  if (done.some((s) => s.reps < ex.repMin)) {
+    return { kg: top, up: false, text: `${de(top)} kg halten und in jedem Satz mindestens ${ex.repMin} Wdh. schaffen.` }
+  }
+  return { kg: top, up: false, text: `${de(top)} kg, pro Satz eine Wiederholung mehr als letztes Mal (bis ${ex.repMax}).` }
+}
+
+/* ---------- Erholung pro Muskelgruppe ---------- */
+
+export function muscleRecovery(data: AppData, today: string) {
+  const names = new Map<string, string>()
+  getWorkouts(data).forEach((w) => w.exercises.forEach((e) => names.set(e.id, e.name)))
+  const last: Record<string, string> = {}
+  for (const log of Object.values(data.workouts)) {
+    for (const [id, sets] of Object.entries(log.sets)) {
+      if (!sets.some((s) => s.reps)) continue
+      const m = muscleOf(names.get(id) ?? id)
+      if (!last[m] || log.date > last[m]) last[m] = log.date
+    }
+  }
+  return MUSCLES.map((muscle) => {
+    const date = last[muscle]
+    const days = date ? Math.round((fromKey(today).getTime() - fromKey(date).getTime()) / 86_400_000) : null
+    const state = days == null ? 'none' : days <= 1 ? 'tired' : days === 2 ? 'mid' : 'fresh'
+    return { muscle, days, state }
+  })
+}

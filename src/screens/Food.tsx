@@ -218,6 +218,19 @@ export default function Food() {
   }
 
   const targets = getTargets(data.settings, date)
+
+  /* ----- Vorschläge passend zu den Rest-Kalorien (Idee von performAll) ----- */
+  const remaining = targets.kcal - totals.kcal
+  const mainLeft = (['fruehstueck', 'mittag', 'abend'] as MealId[]).filter((id) => !entries.some((e) => e.meal === id)).length
+  const budget = meal === 'snack' ? Math.min(remaining, 450) : remaining / Math.max(1, mainLeft)
+  const mealTag = { fruehstueck: 'Frühstück', mittag: 'Mittag', abend: 'Abend', snack: 'Snack' }[meal]
+  const suggestions =
+    remaining < 200
+      ? []
+      : getRecipes(data)
+          .filter((r) => (r.tags.includes(mealTag) || (meal === 'snack' && r.kcal <= 450)) && r.kcal <= budget * 1.15)
+          .sort((a, b) => Math.abs(a.kcal - budget) - Math.abs(b.kcal - budget) || b.protein - a.protein)
+          .slice(0, 3)
   const mode = MODES[data.settings.mode]
   const planKcal = MEAL_PLAN.reduce((a, s) => a + s.options[0].kcal, 0)
   const planDiff = getTargets(data.settings, todayKey()).kcal - planKcal
@@ -456,6 +469,29 @@ export default function Food() {
               </div>
             )}
           </section>
+
+          {!q && !sel && suggestions.length > 0 && (
+            <section className="card">
+              <div className="meal-head">
+                <h2>Passt noch rein</h2>
+                <span className="muted small">noch {Math.round(remaining)} kcal</span>
+              </div>
+              <div className="results">
+                {suggestions.map((r) => (
+                  <button key={r.id} className="result" onClick={() => {
+                    pickPortion(r.title, r)
+                    setTimeout(() => document.querySelector('.selected')?.scrollIntoView({ block: 'center', behavior: 'smooth' }), 60)
+                  }}>
+                    <span>{r.title}</span>
+                    <span className="muted small">
+                      {r.kcal} kcal · {r.protein} g Protein · {r.minutes} Min.
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <p className="hint">Vorschläge für {MEALS.find((x) => x.id === meal)!.label}, passend zu deinen Rest-Kalorien. Das Rezept steht unter „Rezepte“.</p>
+            </section>
+          )}
 
           {MEALS.map((m) => {
             const list = entries.filter((e) => (e.meal ?? 'snack') === m.id)
