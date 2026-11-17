@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { smooth } from '../lib/transition'
 import { uid, useStore, type FoodEntry, type MealId, type SavedMeal } from '../lib/store'
 import { addDays, formatLong, isWeekend, todayKey } from '../lib/dates'
 import { FOODS, MEAL_PLAN, WEEKEND_RULES, type Food as FoodItem, type Macros } from '../data/nutrition'
@@ -249,7 +250,7 @@ export default function Food() {
             ['ziele', `Ziel: ${mode.label}`],
           ] as [View, string][]
         ).map(([id, label]) => (
-          <button key={id} className={`chip ${view === id ? 'active' : ''}`} onClick={() => setView(id)}>
+          <button key={id} className={`chip ${view === id ? 'active' : ''}`} onClick={() => smooth(() => setView(id))}>
             {label}
           </button>
         ))}
@@ -365,7 +366,7 @@ export default function Food() {
 
             {!q && (
               <>
-                <button className="collapse-head" onClick={() => setShowAll(!showAll)} aria-expanded={showAll}>
+                <button className="collapse-head" onClick={() => smooth(() => setShowAll(!showAll))} aria-expanded={showAll}>
                   <span>
                     Alle Lebensmittel <span className="muted small">({allFoods.length})</span>
                   </span>

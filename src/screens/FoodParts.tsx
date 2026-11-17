@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { smooth } from '../lib/transition'
 import { uid, useStore } from '../lib/store'
 import { todayKey, addDays, mondayOf } from '../lib/dates'
 import type { Food, Macros } from '../data/nutrition'
@@ -120,7 +121,7 @@ export function RecipeList({ onAdd, query = '' }: { onAdd: (title: string, m: Ma
       <input className="search" placeholder="Rezept oder Zutat suchen …" value={search} onChange={(e) => setSearch(e.target.value)} />
       <div className="chips">
         {tags.map((t) => (
-          <button key={t} className={`chip ${filter === t ? 'active' : ''}`} onClick={() => setFilter(t)}>
+          <button key={t} className={`chip ${filter === t ? 'active' : ''}`} onClick={() => smooth(() => setFilter(t))}>
             {t}
           </button>
         ))}
@@ -130,7 +131,7 @@ export function RecipeList({ onAdd, query = '' }: { onAdd: (title: string, m: Ma
         const isOpen = open === r.id
         return (
           <section className="card" key={r.id}>
-            <button className="week-head" onClick={() => setOpen(isOpen ? null : r.id)}>
+            <button className="week-head" onClick={() => smooth(() => setOpen(isOpen ? null : r.id))}>
               <span>
                 <strong>{r.title}</strong>
                 <br />

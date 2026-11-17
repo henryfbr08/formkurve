@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { smooth } from '../lib/transition'
 import { useStore } from '../lib/store'
 import { formatShort, mondayOf, pace, todayKey, weekdayShort } from '../lib/dates'
 import { planWeek, runDate } from '../lib/stats'
@@ -178,7 +179,7 @@ export default function Running() {
         const note = !data.runPlan ? WEEK_NOTES[week] : undefined
         return (
           <section className={`card ${week === current ? 'current' : ''}`} key={week}>
-            <button className="week-head" onClick={() => setOpenWeek(open ? 0 : week)}>
+            <button className="week-head" onClick={() => smooth(() => setOpenWeek(open ? 0 : week))}>
               <span>
                 <strong>Woche {week}</strong> {note && <span className="badge">{note}</span>}
               </span>

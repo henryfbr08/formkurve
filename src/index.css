@@ -1710,3 +1710,213 @@ button.ghost {
 .tab-label {
   letter-spacing: 0.01em;
 }
+
+/* =========================================================
+   Übergänge & Animationen
+   ========================================================= */
+:root {
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+/* Seitenwechsel über die Tabbar: Richtung je nach Tab */
+.screen {
+  animation: none;
+}
+
+.page-none {
+  animation: page-fade 0.3s var(--ease-out);
+}
+
+.page-right {
+  animation: page-in-right 0.32s var(--ease-out);
+}
+
+.page-left {
+  animation: page-in-left 0.32s var(--ease-out);
+}
+
+@keyframes page-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes page-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+}
+
+@keyframes page-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-28px);
+  }
+}
+
+/* Karten erscheinen kurz nacheinander */
+.page .card,
+.page .tiles {
+  animation: card-rise 0.42s var(--ease-out) both;
+}
+
+.page .screen > :nth-child(2) { animation-delay: 0.03s; }
+.page .screen > :nth-child(3) { animation-delay: 0.06s; }
+.page .screen > :nth-child(4) { animation-delay: 0.09s; }
+.page .screen > :nth-child(5) { animation-delay: 0.12s; }
+.page .screen > :nth-child(6) { animation-delay: 0.15s; }
+.page .screen > :nth-child(n + 7) { animation-delay: 0.18s; }
+
+@keyframes card-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+/* Tabbar: aktives Icon hüpft kurz */
+.tabbar button.active .tab-icon {
+  animation: tab-pop 0.35s var(--ease-spring);
+}
+
+@keyframes tab-pop {
+  0% {
+    transform: scale(0.82);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.tab-icon,
+.tabbar button {
+  transition: color 0.2s, background 0.2s;
+}
+
+/* Fenster (Overlays) blenden weich ein */
+.overlay {
+  animation: overlay-in 0.2s ease-out;
+}
+
+@keyframes overlay-in {
+  from {
+    background: rgba(0, 0, 0, 0);
+    backdrop-filter: blur(0);
+  }
+}
+
+.overlay > .scanner {
+  animation: pop-in 0.26s var(--ease-out);
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+}
+
+.sheet {
+  animation: sheet-up 0.32s var(--ease-out);
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+}
+
+/* Aufklappen (Wochen, Rezepte, ausgewählte Lebensmittel, Bearbeiten) */
+.recipe,
+.run-form,
+.entry-edit,
+.selected,
+.tpl-card.open > :not(.week-head),
+.food-grid {
+  animation: unfold 0.28s var(--ease-out);
+}
+
+@keyframes unfold {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
+/* Chips, Segmente, Buttons: weiche Zustände */
+.chip,
+.seg button,
+.mode,
+.result,
+.collapse-head,
+.icon-btn {
+  transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.12s, box-shadow 0.2s;
+}
+
+.chip:active,
+.icon-btn:active,
+.result:active,
+.collapse-head:active {
+  transform: scale(0.96);
+}
+
+.collapse-head svg,
+.week-head > span:last-child {
+  transition: transform 0.25s var(--ease-out);
+}
+
+.set-row,
+.set-no {
+  transition: background 0.25s;
+}
+
+.set-row.filled .set-no {
+  animation: tab-pop 0.3s var(--ease-spring);
+}
+
+.toast {
+  animation: toast-in 0.35s var(--ease-spring);
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -16px);
+  }
+}
+
+.badge.block,
+.card.record {
+  animation: unfold 0.3s var(--ease-out);
+}
+
+/* View Transitions (Wechsel innerhalb einer Seite) */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.22s;
+  animation-timing-function: var(--ease-out);
+}
+
+.tabbar {
+  view-transition-name: tabbar;
+}
+
+::view-transition-group(tabbar) {
+  animation: none;
+}
+
+/* „Bewegung reduzieren“ in den iPhone-Einstellungen respektieren */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after,
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    transition-duration: 0.01ms !important;
+  }
+}

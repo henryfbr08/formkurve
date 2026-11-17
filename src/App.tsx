@@ -20,6 +20,7 @@ const TABS: { id: Tab; label: string; icon: ReactNode }[] = [
 
 export default function App() {
   const [tab, setTab] = useState<Tab>('heute')
+  const [dir, setDir] = useState<'left' | 'right' | 'none'>('none')
   const [toast, setToast] = useState('')
   const { update } = useStore()
 
@@ -46,6 +47,12 @@ export default function App() {
   }, [toast])
 
   function go(t: Tab) {
+    if (t === tab) {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+      return
+    }
+    const order = TABS.map((x) => x.id)
+    setDir(order.indexOf(t) > order.indexOf(tab) ? 'right' : 'left')
     setTab(t)
     window.scrollTo(0, 0)
   }
@@ -53,7 +60,7 @@ export default function App() {
   return (
     <div className="app">
       {toast && <div className="toast">{toast}</div>}
-      <main>
+      <main key={tab} className={`page page-${dir}`}>
         {tab === 'heute' && <Today go={go} />}
         {tab === 'training' && <Training />}
         {tab === 'laufen' && <Running />}

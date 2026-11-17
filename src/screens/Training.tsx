@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { smooth } from '../lib/transition'
 import { uid, useStore, type AppData, type SetEntry } from '../lib/store'
 import { formatShort, fromKey, todayKey } from '../lib/dates'
 import { lastSets } from '../lib/stats'
@@ -213,12 +214,12 @@ export default function Training() {
       <div className="page-head">
         <h1>{editing ? 'Einheit bearbeiten' : 'Training'}</h1>
         {editing ? (
-          <button className="primary small" onClick={() => setEditing(false)}>
+          <button className="primary small" onClick={() => smooth(() => setEditing(false))}>
             Fertig
           </button>
         ) : (
           <div className="head-actions">
-            <button className="icon-btn" onClick={() => setEditing(true)} aria-label="Diese Einheit bearbeiten">
+            <button className="icon-btn" onClick={() => smooth(() => setEditing(true))} aria-label="Diese Einheit bearbeiten">
               <IconEdit />
             </button>
             <button className="icon-btn accent" onClick={() => setSheet('splits')} aria-label="Pläne und neue Einheit">
@@ -230,7 +231,7 @@ export default function Training() {
       {!editing && (
         <div className="chips">
           {workouts.map((w) => (
-            <button key={w.id} className={`chip ${w.id === workout.id ? 'active' : ''}`} onClick={() => changeWorkout(w.id)}>
+            <button key={w.id} className={`chip ${w.id === workout.id ? 'active' : ''}`} onClick={() => smooth(() => changeWorkout(w.id))}>
               {w.name}
             </button>
           ))}
@@ -250,10 +251,10 @@ export default function Training() {
               </button>
             </div>
             <div className="seg">
-              <button className={sheet === 'splits' ? 'active' : ''} onClick={() => setSheet('splits')}>
+              <button className={sheet === 'splits' ? 'active' : ''} onClick={() => smooth(() => setSheet('splits'))}>
                 Fertige Splits
               </button>
-              <button className={sheet === 'own' ? 'active' : ''} onClick={() => setSheet('own')}>
+              <button className={sheet === 'own' ? 'active' : ''} onClick={() => smooth(() => setSheet('own'))}>
                 Mein Split
               </button>
             </div>
@@ -266,7 +267,7 @@ export default function Training() {
                   const active = activeTemplate?.id === t.id
                   return (
                     <div className={`tpl-card ${active ? 'active' : ''} ${open ? 'open' : ''}`} key={t.id}>
-                      <button className="week-head" onClick={() => setTplOpen(open ? null : t.id)}>
+                      <button className="week-head" onClick={() => smooth(() => setTplOpen(open ? null : t.id))}>
                         <span>
                           <strong>{t.name}</strong> {active && <span className="badge ok">aktiv</span>}
                           <br />
