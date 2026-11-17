@@ -1432,3 +1432,34 @@ figcaption {
 .rec.tired {
   border-left-color: var(--accent);
 }
+
+/* ---------- Vorlagen & Messart ---------- */
+.tpl {
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+}
+
+.tpl.active strong {
+  color: var(--good);
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 10px;
+}
+
+.check input {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
+.ex-edit select {
+  width: 100%;
+  padding: 11px 6px;
+}

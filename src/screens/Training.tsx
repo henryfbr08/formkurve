@@ -5,8 +5,17 @@ import { lastSets } from '../lib/stats'
 import { findWorkout, getSchedule, getWorkouts, slug } from '../lib/plan'
 import type { Exercise, Workout } from '../data/training'
 import { EXERCISE_LIBRARY } from '../data/exercises'
+import { TEMPLATES, type PlanTemplate } from '../data/templates'
 import { IconTimer } from '../Icons'
 import { bestSet, isRecord, muscleRecovery, plannedSetsPerMuscle, suggestNext } from '../lib/insights'
+
+const isMobilityName = (n: string) => EXERCISE_LIBRARY.find((g) => g.group === 'Mobility')!.names.includes(n)
+
+/** "3 × 8–12 Wdh. je Seite" */
+export function prescription(ex: Exercise): string {
+  const r = ex.repMin === ex.repMax ? `${ex.repMin}` : `${ex.repMin}–${ex.repMax}`
+  return `${ex.sets} × ${r} ${ex.mode === 'sec' ? 'Sek.' : 'Wdh.'}${ex.perSide ? ' je Seite' : ''}`
+}
 
 const DAYS: [number, string][] = [
   [1, 'Montag'],
@@ -99,9 +108,11 @@ export default function Training() {
       while (taken(id)) id += '-2'
       if (p.mode === 'swap') {
         const old = w.exercises[p.index]
-        w.exercises[p.index] = { id, name, sets: old.sets, repMin: old.repMin, repMax: old.repMax }
+        w.exercises[p.index] = isMobilityName(name)
+          ? { id, name, sets: 2, repMin: 8, repMax: 10, mode: 'reps' }
+          : { id, name, sets: old.sets, repMin: old.repMin, repMax: old.repMax }
       } else {
-        w.exercises.push({ id, name, sets: 3, repMin: 8, repMax: 12 })
+        w.exercises.push(isMobilityName(name) ? { id, name, sets: 2, repMin: 8, repMax: 10, mode: 'reps' } : { id, name, sets: 3, repMin: 8, repMax: 12 })
       }
     })
   }
@@ -135,6 +146,24 @@ export default function Training() {
       return d
     })
   }
+
+  const [tplOpen, setTplOpen] = useState<string | null>(null)
+
+  function applyTemplate(t: PlanTemplate) {
+    update((d) => {
+      d.plan = structuredClone(t.workouts)
+      d.schedule = { ...t.schedule }
+      return d
+    })
+    const todayId = t.schedule[fromKey(today).getDay()]
+    changeWorkout(todayId ?? t.workouts[0].id)
+    setTplOpen(null)
+    setEditing(false)
+  }
+
+  const activeTemplate = TEMPLATES.find(
+    (t) => JSON.stringify(t.workouts) === JSON.stringify(workouts) && JSON.stringify(t.schedule) === JSON.stringify(schedule),
+  )
 
   function resetPlan() {
     update((d) => {
@@ -197,7 +226,18 @@ export default function Training() {
                   </div>
                 </label>
                 <label>
-                  Wdh. von
+                  Messart
+                  <select
+                    value={ex.mode ?? 'weight'}
+                    onChange={(e) => patchExercise(i, { mode: e.target.value === 'weight' ? undefined : (e.target.value as 'reps' | 'sec') })}
+                  >
+                    <option value="weight">kg × Wdh.</option>
+                    <option value="reps">nur Wdh.</option>
+                    <option value="sec">Sekunden</option>
+                  </select>
+                </label>
+                <label>
+                  {ex.mode === 'sec' ? 'Sek. von' : 'Wdh. von'}
                   <input inputMode="numeric" value={ex.repMin} onChange={(e) => patchExercise(i, { repMin: parseInt(e.target.value) || 1 })} />
                 </label>
                 <label>
@@ -205,6 +245,10 @@ export default function Training() {
                   <input inputMode="numeric" value={ex.repMax} onChange={(e) => patchExercise(i, { repMax: parseInt(e.target.value) || ex.repMin })} />
                 </label>
               </div>
+              <label className="check">
+                <input type="checkbox" checked={!!ex.perSide} onChange={(e) => patchExercise(i, { perSide: e.target.checked || undefined })} />
+                je Seite
+              </label>
               <div className="row wrap">
                 <button className="soft small" onClick={() => setPicker({ mode: 'swap', index: i })}>
                   Übung tauschen
@@ -225,6 +269,42 @@ export default function Training() {
           <button className="primary wide" onClick={() => setPicker({ mode: 'add' })}>
             + Übung hinzufügen
           </button>
+
+          <section className="card">
+            <h2>Vorgeschlagene Pläne</h2>
+            <p className="hint">Wechsle mit einem Tipp. Dein Trainingsverlauf und deine Bestleistungen bleiben erhalten.</p>
+            {TEMPLATES.map((t) => {
+              const open = tplOpen === t.id
+              const active = activeTemplate?.id === t.id
+              return (
+                <div className={`tpl ${active ? 'active' : ''}`} key={t.id}>
+                  <button className="week-head" onClick={() => setTplOpen(open ? null : t.id)}>
+                    <span>
+                      <strong>{t.name}</strong> {active && <span className="badge ok">aktiv</span>}
+                      <br />
+                      <span className="muted small">{t.days}</span>
+                    </span>
+                    <span className="muted">{open ? '▲' : '▼'}</span>
+                  </button>
+                  {open && (
+                    <>
+                      <p className="small">{t.desc}</p>
+                      {t.workouts.map((w) => (
+                        <p className="muted small" key={w.id}>
+                          <strong>{w.name}:</strong> {w.exercises.map((e) => e.name).join(', ')}
+                        </p>
+                      ))}
+                      {!active && (
+                        <button className="primary wide" onClick={() => applyTemplate(t)}>
+                          Diesen Plan übernehmen
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+              )
+            })}
+          </section>
 
           <section className="card">
             <h2>Plan-Check: Sätze pro Woche</h2>
@@ -300,7 +380,7 @@ export default function Training() {
                 )}
                 {record && <p className="badge ok block">Neue Bestleistung!</p>}
                 <p className="muted small">
-                  {ex.sets} × {ex.repMin === ex.repMax ? ex.repMin : `${ex.repMin}–${ex.repMax}`} Wdh.
+                  {prescription(ex)}
                   {last && (
                     <>
                       {' · '}Letztes Mal ({formatShort(last.date)}): {last.sets.map((s) => `${s.kg ?? '–'}×${s.reps ?? '–'}`).join(', ')}
@@ -317,23 +397,38 @@ export default function Training() {
                   {Array.from({ length: ex.sets }).map((_, i) => {
                     const s = sets[ex.id]?.[i]
                     const prev = last?.sets[i]
+                    const weighted = !ex.mode || ex.mode === 'weight'
+                    const unit = ex.mode === 'sec' ? 'Sek.' : 'Wdh.'
+                    const filled = s?.reps != null && (!weighted || s?.kg != null)
                     return (
-                      <div className={`set-row ${s?.kg != null && s?.reps != null ? 'filled' : ''}`} key={i}>
+                      <div className={`set-row ${filled ? 'filled' : ''}`} key={i}>
                         <span className="set-no">{i + 1}</span>
-                        <input
-                          inputMode="decimal"
-                          placeholder={sug ? `${sug.kg}` : prev?.kg != null ? `${prev.kg}` : 'kg'}
-                          value={s?.kg ?? ''}
-                          onChange={(e) => setValue(ex.id, i, 'kg', e.target.value)}
-                        />
-                        <span className="muted small">kg</span>
+                        {weighted && (
+                          <>
+                            <input
+                              inputMode="decimal"
+                              placeholder={sug ? `${sug.kg}` : prev?.kg != null ? `${prev.kg}` : 'kg'}
+                              value={s?.kg ?? ''}
+                              onChange={(e) => setValue(ex.id, i, 'kg', e.target.value)}
+                            />
+                            <span className="muted small">kg</span>
+                          </>
+                        )}
                         <input
                           inputMode="numeric"
-                          placeholder={prev?.reps != null ? `${prev.reps}` : 'Wdh.'}
+                          placeholder={prev?.reps != null ? `${prev.reps}` : weighted ? 'Wdh.' : `${ex.repMax}`}
                           value={s?.reps ?? ''}
                           onChange={(e) => setValue(ex.id, i, 'reps', e.target.value)}
                         />
-                        <span className="muted small">Wdh.</span>
+                        <span className="muted small">
+                          {unit}
+                          {ex.perSide && ' je Seite'}
+                        </span>
+                        {!weighted && s?.reps == null && (
+                          <button className="ghost small" onClick={() => setValue(ex.id, i, 'reps', String(ex.repMax))}>
+                            ✓ erledigt
+                          </button>
+                        )}
                       </div>
                     )
                   })}

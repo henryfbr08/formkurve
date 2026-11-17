@@ -6,6 +6,10 @@ export interface Exercise {
   repMax: number
   /** optionaler Hinweis aus der Plan-Analyse */
   hint?: string
+  /** Messart: Gewicht × Wdh. (Standard), nur Wdh. oder Sekunden halten */
+  mode?: 'weight' | 'reps' | 'sec'
+  /** Angabe gilt pro Seite */
+  perSide?: boolean
 }
 
 export interface Workout {
@@ -13,6 +17,8 @@ export interface Workout {
   name: string
   exercises: Exercise[]
 }
+
+const RUN_HINT = 'Grundübungen mit 1–2 Wdh. Reserve, nicht bis zum Versagen: Freitag ist der Tempolauf.'
 
 const ISO_HINT = 'Tipp: Bei Isolationsübungen sind 10–15 Wdh. gelenkschonender und genauso effektiv.'
 
@@ -44,15 +50,16 @@ export const WORKOUTS: Workout[] = [
   },
   {
     id: 'legs',
-    name: 'Legs + Schultern',
+    name: 'Beine (lauf-angepasst)',
     exercises: [
-      { id: 'seitheben-maschine', name: 'Seitheben (Maschine)', sets: 3, repMin: 4, repMax: 6, hint: ISO_HINT },
-      { id: 'schulterpresse', name: 'Schulterpresse', sets: 2, repMin: 4, repMax: 6 },
-      { id: 'reverse-butterfly', name: 'Butterfly reverse', sets: 2, repMin: 4, repMax: 6, hint: ISO_HINT },
-      { id: 'beinbeuger', name: 'Beinbeuger', sets: 2, repMin: 4, repMax: 6, hint: 'Beine bekommen aktuell sehr wenig Volumen – siehe Plan-Analyse (09).' },
-      { id: 'beinstrecker', name: 'Beinstrecker', sets: 2, repMin: 4, repMax: 6 },
-      { id: 'waden-sitzend', name: 'Wadenheben (sitzend)', sets: 2, repMin: 4, repMax: 6 },
-      { id: 'beinpresse', name: 'Beinpresse 45°', sets: 2, repMin: 4, repMax: 6 },
+      { id: 'beinpresse', name: 'Beinpresse 45°', sets: 3, repMin: 6, repMax: 10, hint: RUN_HINT },
+      { id: 'rdl', name: 'Rumänisches Kreuzheben', sets: 3, repMin: 6, repMax: 10, hint: 'Hintere Kette (Po, Beinbeuger) treibt dich beim Laufen nach vorne. Rücken gerade, Stange nah am Bein.' },
+      { id: 'bulgarian', name: 'Bulgarian Split Squat', sets: 2, repMin: 8, repMax: 12, perSide: true, hint: 'Einbeinig wie beim Laufen: trainiert Kraft und Stabilität von Knie und Hüfte.' },
+      { id: 'beinbeuger', name: 'Beinbeuger', sets: 2, repMin: 8, repMax: 12 },
+      { id: 'beinstrecker', name: 'Beinstrecker', sets: 2, repMin: 10, repMax: 15 },
+      { id: 'waden-stehend', name: 'Wadenheben (stehend)', sets: 3, repMin: 8, repMax: 12, hint: 'Schwer und langsam (3 Sek. runter). Die Waden fangen beim Laufen ein Vielfaches deines Körpergewichts ab.' },
+      { id: 'waden-sitzend', name: 'Wadenheben (sitzend)', sets: 2, repMin: 12, repMax: 15, hint: 'Sitzend trifft vor allem den Schollenmuskel, der für Läufer besonders wichtig ist.' },
+      { id: 'abduktoren', name: 'Abduktorenmaschine', sets: 2, repMin: 12, repMax: 15, hint: 'Seitliche Hüftmuskeln halten das Becken und das Knie beim Laufen stabil.' },
     ],
   },
   {
@@ -96,6 +103,24 @@ export const WORKOUTS: Workout[] = [
   },
 ]
 
+export const MOBILITY: Workout = {
+  id: 'mobility',
+  name: 'Mobility',
+  exercises: [
+    { id: 'cat-cow', name: 'Katze-Kuh', sets: 1, repMin: 10, repMax: 10, mode: 'reps' },
+    { id: 'bws-rotation', name: 'BWS-Rotation im Vierfüßlerstand', sets: 2, repMin: 8, repMax: 8, mode: 'reps', perSide: true },
+    { id: 'worlds-greatest', name: "World's Greatest Stretch", sets: 2, repMin: 5, repMax: 5, mode: 'reps', perSide: true },
+    { id: 'hip-90-90', name: '90/90 Hüftrotation', sets: 2, repMin: 8, repMax: 8, mode: 'reps', perSide: true },
+    { id: 'couch-stretch', name: 'Hüftbeuger-Dehnung (Couch Stretch)', sets: 2, repMin: 45, repMax: 60, mode: 'sec', perSide: true },
+    { id: 'knie-zur-wand', name: 'Sprunggelenk: Knie zur Wand', sets: 2, repMin: 10, repMax: 10, mode: 'reps', perSide: true },
+    { id: 'tiefe-hocke', name: 'Tiefe Hocke halten', sets: 2, repMin: 30, repMax: 45, mode: 'sec' },
+    { id: 'waden-dehnung', name: 'Wadendehnung an der Wand', sets: 2, repMin: 30, repMax: 45, mode: 'sec', perSide: true },
+    { id: 'band-dislocates', name: 'Schulterkreisen mit Band (Dislocates)', sets: 2, repMin: 10, repMax: 12, mode: 'reps' },
+  ],
+}
+
+WORKOUTS.push(MOBILITY)
+
 /** Wochentag (0 = So … 6 = Sa) → Workout-ID */
 export const WEEK_SCHEDULE: Record<number, string | null> = {
   1: 'push',
@@ -104,7 +129,7 @@ export const WEEK_SCHEDULE: Record<number, string | null> = {
   4: 'brust-ruecken',
   5: 'arme',
   6: 'stabi',
-  0: null,
+  0: 'mobility',
 }
 
 export function workoutById(id: string): Workout | undefined {
