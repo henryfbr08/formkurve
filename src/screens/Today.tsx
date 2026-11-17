@@ -253,6 +253,12 @@ function Ring({ value, max, children }: { value: number; max: number; children: 
   return (
     <div className="ring">
       <svg viewBox="0 0 120 120">
+        <defs>
+          <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#ff8a3d" />
+            <stop offset="100%" stopColor="#ff3d6e" />
+          </linearGradient>
+        </defs>
         <circle cx="60" cy="60" r={r} className="ring-bg" />
         <circle
           cx="60"

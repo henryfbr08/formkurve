@@ -1920,3 +1920,311 @@ button.ghost {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* =========================================================
+   Design 3.0: Glas-Look, Verläufe, schwebende Tabbar
+   ========================================================= */
+:root {
+  --accent: #ff4d5e;
+  --accent-2: #ff8a3d;
+  --violet: #8b5cf6;
+  --grad: linear-gradient(135deg, #ff8a3d 0%, #ff4d5e 55%, #ff3d8a 100%);
+  --grad-cool: linear-gradient(135deg, #38bdf8, #8b5cf6);
+  --glass: rgba(22, 24, 32, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.07);
+  --font-round: ui-rounded, 'SF Pro Rounded', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+}
+
+body {
+  background:
+    radial-gradient(800px 500px at 110% -10%, rgba(255, 77, 94, 0.2), transparent 60%),
+    radial-gradient(700px 500px at -20% 0%, rgba(139, 92, 246, 0.16), transparent 60%),
+    radial-gradient(600px 400px at 50% 110%, rgba(56, 189, 248, 0.08), transparent 60%),
+    #08090d;
+  background-attachment: fixed;
+}
+
+/* Zahlen und Überschriften in runder iPhone-Schrift */
+h1,
+.ring-num,
+.stat-value,
+.tile strong,
+.day-num,
+.timer .time,
+.macro-grid b {
+  font-family: var(--font-round);
+}
+
+h1 {
+  background: linear-gradient(180deg, #ffffff 30%, #b9bfcc);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Glas-Karten mit feinem Lichtrand */
+.card {
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.01) 40%), var(--glass);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(20px) saturate(140%);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.06) inset,
+    0 18px 40px -18px rgba(0, 0, 0, 0.7);
+}
+
+.card.current {
+  border-color: transparent;
+  background:
+    linear-gradient(var(--card), var(--card)) padding-box,
+    var(--grad) border-box;
+  border: 1px solid transparent;
+}
+
+/* Heute: Kalorienkarte als Hingucker */
+.kcal-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.kcal-card::before {
+  content: '';
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  left: -60px;
+  top: -60px;
+  background: radial-gradient(circle, rgba(255, 77, 94, 0.28), transparent 65%);
+  pointer-events: none;
+}
+
+.ring-fg {
+  stroke: url(#ringGrad);
+  filter: drop-shadow(0 0 6px rgba(255, 77, 94, 0.55));
+}
+
+.ring-num {
+  font-size: 30px;
+}
+
+/* Kacheln mit farbigem Schimmer */
+.tile {
+  overflow: hidden;
+}
+
+.tile::after {
+  content: '';
+  position: absolute;
+  right: -40px;
+  bottom: -40px;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 77, 94, 0.18), transparent 70%);
+  pointer-events: none;
+}
+
+.tiles .tile:nth-child(2)::after {
+  background: radial-gradient(circle, rgba(52, 211, 153, 0.18), transparent 70%);
+}
+
+.tile-icon {
+  border-radius: 14px;
+}
+
+/* Balken mit Verlauf und leichtem Leuchten */
+.bar-track {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.bar-fill {
+  background: var(--grad);
+  box-shadow: 0 0 10px rgba(255, 77, 94, 0.35);
+}
+
+.bar-fill.m-carbs {
+  background: linear-gradient(90deg, #38bdf8, #4ea8de);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+}
+
+.bar-fill.m-fat {
+  background: linear-gradient(90deg, #fbbf24, #f59e0b);
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.3);
+}
+
+.bar-fill.m-fiber,
+.bar-fill.ok {
+  background: linear-gradient(90deg, #34d399, #10b981);
+  box-shadow: 0 0 10px rgba(52, 211, 153, 0.3);
+}
+
+.bar-fill.m-water {
+  background: var(--grad-cool);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.35);
+}
+
+.bar-fill.m-sugar,
+.bar-fill.m-salt {
+  background: linear-gradient(90deg, #8d93a1, #b3b8c4);
+  box-shadow: none;
+}
+
+/* Knöpfe */
+button.primary {
+  background: var(--grad);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 24px -6px rgba(255, 77, 94, 0.55);
+}
+
+button.primary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), transparent 50%);
+  pointer-events: none;
+}
+
+button.soft,
+button.ghost,
+.icon-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+}
+
+.chip {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--glass-border);
+}
+
+.chip.active {
+  background: var(--grad);
+  box-shadow: 0 6px 16px -6px rgba(255, 77, 94, 0.6);
+}
+
+.seg {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.seg button.active {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+input,
+select,
+textarea {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--glass-border);
+}
+
+.stat {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid var(--glass-border);
+}
+
+/* Wochenleiste: heute als leuchtender Punkt */
+.day.today {
+  background: var(--grad);
+  box-shadow: 0 8px 20px -8px rgba(255, 77, 94, 0.7);
+}
+
+.day.today .day-name,
+.day.today .day-num {
+  color: #fff;
+}
+
+.day.today .mark.gym.planned,
+.day.today .mark.run.planned {
+  border-color: #fff;
+}
+
+.day.today .mark.done {
+  background: #fff;
+}
+
+/* Schwebende Tabbar mit wandernder Markierung */
+main {
+  padding-bottom: calc(118px + env(safe-area-inset-bottom));
+}
+
+.tabbar {
+  left: 12px;
+  right: 12px;
+  bottom: calc(10px + env(safe-area-inset-bottom));
+  max-width: 536px;
+  margin: 0 auto;
+  border-radius: 26px;
+  border: 1px solid var(--glass-border);
+  background: rgba(18, 20, 27, 0.78);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.8), 0 1px 0 rgba(255, 255, 255, 0.06) inset;
+  padding: 6px;
+  overflow: hidden;
+}
+
+.tabbar button {
+  position: relative;
+  z-index: 1;
+  max-width: none;
+  padding: 7px 2px 6px;
+}
+
+.tabbar button.active {
+  color: #fff;
+}
+
+.tabbar button.active .tab-icon {
+  background: none;
+}
+
+.tab-indicator {
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  left: 6px;
+  width: calc((100% - 12px) / 5);
+  border-radius: 20px;
+  background: var(--grad);
+  box-shadow: 0 6px 18px -4px rgba(255, 77, 94, 0.6);
+  transition: transform 0.38s cubic-bezier(0.34, 1.3, 0.64, 1);
+}
+
+.tab-label {
+  font-weight: 600;
+}
+
+/* Pausen-Timer über der schwebenden Tabbar */
+.timer {
+  bottom: calc(92px + env(safe-area-inset-bottom));
+  background: var(--glass);
+}
+
+/* Bottom-Sheet im Glas-Look */
+.sheet,
+.scanner {
+  background: rgba(20, 22, 30, 0.94);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-color: var(--glass-border);
+}
+
+.tpl-card,
+.result {
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid var(--glass-border);
+}
+
+/* Marke oben */
+.brand {
+  background: var(--grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* Karten ohne Hintergrund-Unschärfe: spart Akku und ruckelt nicht beim Wischen */
+.card {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.012) 45%), rgba(20, 22, 29, 0.92);
+}
