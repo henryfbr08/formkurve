@@ -7,6 +7,7 @@ import { getTargets, MODES } from '../lib/targets'
 import { getRecipes } from '../lib/plan'
 import { searchProducts } from '../lib/off'
 import MacroOverview from './MacroOverview'
+import { IconChevron } from '../Icons'
 import Scanner from './Scanner'
 import { FoodForm, Goals, RecipeList } from './FoodParts'
 
@@ -58,6 +59,7 @@ export default function Food() {
   const [editAmount, setEditAmount] = useState('')
   const [quick, setQuick] = useState({ name: '', kcal: '', protein: '', carbs: '', fat: '' })
   const [showQuick, setShowQuick] = useState(false)
+  const [showAll, setShowAll] = useState(false)
 
   const entries = data.food[date] ?? []
   const totals = sumEntries(entries)
@@ -358,18 +360,27 @@ export default function Food() {
                     </button>
                   ))}
                 </div>
-                <p className="hint">Alle Lebensmittel</p>
               </>
             )}
 
             {!q && (
-              <div className="food-grid">
-                {allFoods.map((f) => (
-                  <button key={f.id} className={`chip ${sel?.food?.id === f.id ? 'active' : ''}`} onClick={() => pickFood(f)}>
-                    {f.name}
-                  </button>
-                ))}
-              </div>
+              <>
+                <button className="collapse-head" onClick={() => setShowAll(!showAll)} aria-expanded={showAll}>
+                  <span>
+                    Alle Lebensmittel <span className="muted small">({allFoods.length})</span>
+                  </span>
+                  <IconChevron up={showAll} />
+                </button>
+                {showAll && (
+                  <div className="food-grid">
+                    {allFoods.map((f) => (
+                      <button key={f.id} className={`chip ${sel?.food?.id === f.id ? 'active' : ''}`} onClick={() => pickFood(f)}>
+                        {f.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
 
             {q && !sel && (

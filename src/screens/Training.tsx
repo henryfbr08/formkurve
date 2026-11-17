@@ -8,7 +8,7 @@ import { WORKOUTS, type Exercise, type Workout } from '../data/training'
 const NEW_LEGS = WORKOUTS.find((w) => w.id === 'legs')!
 import { EXERCISE_LIBRARY } from '../data/exercises'
 import { TEMPLATES, type PlanTemplate } from '../data/templates'
-import { IconTimer } from '../Icons'
+import { IconEdit, IconPlus, IconTimer } from '../Icons'
 import { bestSet, isRecord, muscleRecovery, plannedSetsPerMuscle, suggestNext } from '../lib/insights'
 
 const isMobilityName = (n: string) => EXERCISE_LIBRARY.find((g) => g.group === 'Mobility')!.names.includes(n)
@@ -150,6 +150,7 @@ export default function Training() {
   }
 
   const [tplOpen, setTplOpen] = useState<string | null>(null)
+  const [sheet, setSheet] = useState<'splits' | 'own' | null>(null)
 
   function applyTemplate(t: PlanTemplate) {
     update((d) => {
@@ -202,28 +203,182 @@ export default function Training() {
     .sort((a, b) => (a.date < b.date ? 1 : -1))
     .slice(0, 5)
 
+  const dayNames = (id: string) =>
+    DAYS.filter(([d]) => schedule[d] === id)
+      .map(([, l]) => l.slice(0, 2))
+      .join(' · ')
+
   return (
     <div className="screen">
-      <div className="meal-head">
-        <h1>Training</h1>
-        <button className={editing ? 'primary small' : 'ghost small'} onClick={() => setEditing(!editing)}>
-          {editing ? 'Fertig' : 'Plan bearbeiten'}
-        </button>
-      </div>
-      <div className="chips">
-        {workouts.map((w) => (
-          <button key={w.id} className={`chip ${w.id === workout.id ? 'active' : ''}`} onClick={() => changeWorkout(w.id)}>
-            {w.name}
+      <div className="page-head">
+        <h1>{editing ? 'Einheit bearbeiten' : 'Training'}</h1>
+        {editing ? (
+          <button className="primary small" onClick={() => setEditing(false)}>
+            Fertig
           </button>
-        ))}
-        {editing && (
-          <button className="chip" onClick={addWorkout}>
-            + Einheit
-          </button>
+        ) : (
+          <div className="head-actions">
+            <button className="icon-btn" onClick={() => setEditing(true)} aria-label="Diese Einheit bearbeiten">
+              <IconEdit />
+            </button>
+            <button className="icon-btn accent" onClick={() => setSheet('splits')} aria-label="Pläne und neue Einheit">
+              <IconPlus />
+            </button>
+          </div>
         )}
       </div>
+      {!editing && (
+        <div className="chips">
+          {workouts.map((w) => (
+            <button key={w.id} className={`chip ${w.id === workout.id ? 'active' : ''}`} onClick={() => changeWorkout(w.id)}>
+              {w.name}
+            </button>
+          ))}
+        </div>
+      )}
 
       {picker && <ExercisePicker onPick={pick} onClose={() => setPicker(null)} />}
+
+      {sheet && (
+        <div className="overlay" onClick={() => setSheet(null)}>
+          <div className="sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="sheet-grip" />
+            <div className="scanner-head">
+              <h2>Pläne & Einheiten</h2>
+              <button className="ghost small" onClick={() => setSheet(null)}>
+                Schließen
+              </button>
+            </div>
+            <div className="seg">
+              <button className={sheet === 'splits' ? 'active' : ''} onClick={() => setSheet('splits')}>
+                Fertige Splits
+              </button>
+              <button className={sheet === 'own' ? 'active' : ''} onClick={() => setSheet('own')}>
+                Mein Split
+              </button>
+            </div>
+
+            {sheet === 'splits' && (
+              <div className="sheet-body">
+                <p className="hint">Wechsle mit einem Tipp. Trainingsverlauf und Bestleistungen bleiben erhalten.</p>
+                {TEMPLATES.map((t) => {
+                  const open = tplOpen === t.id
+                  const active = activeTemplate?.id === t.id
+                  return (
+                    <div className={`tpl-card ${active ? 'active' : ''} ${open ? 'open' : ''}`} key={t.id}>
+                      <button className="week-head" onClick={() => setTplOpen(open ? null : t.id)}>
+                        <span>
+                          <strong>{t.name}</strong> {active && <span className="badge ok">aktiv</span>}
+                          <br />
+                          <span className="muted small">{t.days}</span>
+                        </span>
+                        <span className="muted">{open ? '▲' : '▼'}</span>
+                      </button>
+                      {open && (
+                        <>
+                          <p className="small">{t.desc}</p>
+                          {t.workouts.map((w) => (
+                            <p className="muted small" key={w.id}>
+                              <strong>{w.name}:</strong> {w.exercises.map((e) => e.name).join(', ')}
+                            </p>
+                          ))}
+                          {!active && (
+                            <button
+                              className="primary wide"
+                              onClick={() => {
+                                applyTemplate(t)
+                                setSheet(null)
+                              }}
+                            >
+                              Diesen Split übernehmen
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            {sheet === 'own' && (
+              <div className="sheet-body">
+                {legsOutdated && (
+                  <button className="soft wide" onClick={() => { applyNewLegDay(); setSheet(null) }}>
+                    Neuen Beintag (fürs Laufen) übernehmen
+                  </button>
+                )}
+                <h3>Meine Einheiten</h3>
+                {workouts.map((w) => (
+                  <div className="unit-row" key={w.id}>
+                    <span>
+                      <strong>{w.name}</strong>
+                      <br />
+                      <span className="muted small">
+                        {w.exercises.length} Übungen{dayNames(w.id) ? ` · ${dayNames(w.id)}` : ' · keinem Tag zugeordnet'}
+                      </span>
+                    </span>
+                    <button
+                      className="ghost small"
+                      onClick={() => {
+                        changeWorkout(w.id)
+                        setEditing(true)
+                        setSheet(null)
+                      }}
+                    >
+                      Bearbeiten
+                    </button>
+                  </div>
+                ))}
+                <button className="primary wide" onClick={() => { addWorkout(); setEditing(true); setSheet(null) }}>
+                  + Neue Einheit erstellen
+                </button>
+
+                <h3>Wochenplan</h3>
+                {DAYS.map(([day, label]) => (
+                  <label className="day-select" key={day}>
+                    <span>{label}</span>
+                    <select value={schedule[day] ?? ''} onChange={(e) => setDay(day, e.target.value)}>
+                      <option value="">Ruhetag</option>
+                      {workouts.map((w) => (
+                        <option key={w.id} value={w.id}>
+                          {w.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ))}
+
+                <h3>Plan-Check: Sätze pro Woche</h3>
+                {plannedSetsPerMuscle(data).map((m) => {
+                  const min = m.muscle === 'Bauch & Rumpf' ? 6 : 10
+                  const cls = m.sets >= min && m.sets <= 20 ? 'ok' : m.sets > 20 ? 'over' : 'low'
+                  return (
+                    <div className="bar" key={m.muscle}>
+                      <div className="bar-head">
+                        <span>{m.muscle}</span>
+                        <span>
+                          {m.sets} {m.sets < min ? '· wenig' : m.sets > 20 ? '· viel' : '· gut'}
+                        </span>
+                      </div>
+                      <div className="bar-track">
+                        <div className={`bar-fill ${cls}`} style={{ width: `${Math.min(100, (m.sets / 20) * 100)}%` }} />
+                      </div>
+                    </div>
+                  )
+                })}
+                <p className="hint">Richtwert: 10–20 direkte Sätze pro Muskelgruppe und Woche, für Bauch und Rumpf reichen 6–10.</p>
+
+                {(data.plan || data.schedule) && (
+                  <button className="ghost small" onClick={resetPlan}>
+                    Auf ursprünglichen Plan zurücksetzen
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {editing ? (
         <>
@@ -232,6 +387,7 @@ export default function Training() {
               Name der Einheit
               <input value={workout.name} onChange={(e) => editPlan((w) => void (w.name = e.target.value))} />
             </label>
+            <p className="hint">{dayNames(workout.id) ? `Geplant am ${dayNames(workout.id)}.` : 'Noch keinem Wochentag zugeordnet: über + → Mein Split → Wochenplan.'}</p>
           </section>
 
           {workout.exercises.map((ex, i) => (
@@ -291,106 +447,16 @@ export default function Training() {
             + Übung hinzufügen
           </button>
 
-          <section className="card">
-            <h2>Vorgeschlagene Pläne</h2>
-            {legsOutdated && (
-              <button className="soft wide" onClick={applyNewLegDay}>
-                Nur den neuen Beintag in meinen Plan übernehmen
-              </button>
-            )}
-            <p className="hint">Wechsle mit einem Tipp. Dein Trainingsverlauf und deine Bestleistungen bleiben erhalten.</p>
-            {TEMPLATES.map((t) => {
-              const open = tplOpen === t.id
-              const active = activeTemplate?.id === t.id
-              return (
-                <div className={`tpl ${active ? 'active' : ''}`} key={t.id}>
-                  <button className="week-head" onClick={() => setTplOpen(open ? null : t.id)}>
-                    <span>
-                      <strong>{t.name}</strong> {active && <span className="badge ok">aktiv</span>}
-                      <br />
-                      <span className="muted small">{t.days}</span>
-                    </span>
-                    <span className="muted">{open ? '▲' : '▼'}</span>
-                  </button>
-                  {open && (
-                    <>
-                      <p className="small">{t.desc}</p>
-                      {t.workouts.map((w) => (
-                        <p className="muted small" key={w.id}>
-                          <strong>{w.name}:</strong> {w.exercises.map((e) => e.name).join(', ')}
-                        </p>
-                      ))}
-                      {!active && (
-                        <button className="primary wide" onClick={() => applyTemplate(t)}>
-                          Diesen Plan übernehmen
-                        </button>
-                      )}
-                    </>
-                  )}
-                </div>
-              )
-            })}
-          </section>
-
-          <section className="card">
-            <h2>Plan-Check: Sätze pro Woche</h2>
-            {plannedSetsPerMuscle(data).map((m) => {
-              const min = m.muscle === 'Bauch & Rumpf' ? 6 : 10
-              const cls = m.sets >= min && m.sets <= 20 ? 'ok' : m.sets > 20 ? 'over' : 'low'
-              return (
-                <div className="bar" key={m.muscle}>
-                  <div className="bar-head">
-                    <span>{m.muscle}</span>
-                    <span>
-                      {m.sets} {m.sets < min ? '· wenig' : m.sets > 20 ? '· viel' : '· gut'}
-                    </span>
-                  </div>
-                  <div className="bar-track">
-                    <div className={`bar-fill ${cls}`} style={{ width: `${Math.min(100, (m.sets / 20) * 100)}%` }} />
-                  </div>
-                </div>
-              )
-            })}
-            <p className="hint">
-              Gezählt werden die direkten Sätze laut Wochenplan. Richtwert für Muskelaufbau: 10–20 pro Muskelgruppe und Woche. Für Bauch und
-              Rumpf reichen auch 6–10.
-            </p>
-          </section>
-
-          <section className="card">
-            <h2>Wochenplan</h2>
-            {DAYS.map(([day, label]) => (
-              <label className="day-select" key={day}>
-                <span>{label}</span>
-                <select value={schedule[day] ?? ''} onChange={(e) => setDay(day, e.target.value)}>
-                  <option value="">Ruhetag</option>
-                  {workouts.map((w) => (
-                    <option key={w.id} value={w.id}>
-                      {w.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ))}
-          </section>
-
-          <div className="row wrap">
-            {workouts.length > 1 && (
-              <button className="ghost small" onClick={deleteWorkout}>
-                Einheit „{workout.name}“ löschen
-              </button>
-            )}
-            {(data.plan || data.schedule) && (
-              <button className="ghost small" onClick={resetPlan}>
-                Auf ursprünglichen Plan zurücksetzen
-              </button>
-            )}
-          </div>
+          {workouts.length > 1 && (
+            <button className="ghost wide danger-text" onClick={deleteWorkout}>
+              Einheit „{workout.name}“ löschen
+            </button>
+          )}
           <p className="hint">Deine bisherigen Trainingsdaten bleiben erhalten, auch wenn du Übungen tauschst oder umbenennst.</p>
         </>
       ) : (
         <>
-{legsOutdated && (
+          {legsOutdated && (
             <section className="card current">
               <h2>Neuer Beintag fürs Laufen</h2>
               <p className="small">
@@ -403,7 +469,7 @@ export default function Training() {
               </button>
             </section>
           )}
-          {workout.exercises.length === 0 && <p className="muted">Noch keine Übungen. Tippe oben auf „Plan bearbeiten“.</p>}
+          {workout.exercises.length === 0 && <p className="muted">Noch keine Übungen. Tippe oben auf den Stift, um Übungen hinzuzufügen.</p>}
           {workout.exercises.map((ex) => {
             const last = lastSets(data, ex.id, today)
             const sug = suggestNext(ex, last?.sets)

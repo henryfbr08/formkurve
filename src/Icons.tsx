@@ -74,3 +74,22 @@ export const IconCheck = ({ size = 14 }: { size?: number }) => (
     <path d="m5 12.500 4.500 4.500L19 7.500" />
   </Svg>
 )
+
+export const IconPlus = ({ size = 20 }: { size?: number }) => (
+  <Svg size={size}>
+    <path d="M12 5v14M5 12h14" />
+  </Svg>
+)
+
+export const IconEdit = ({ size = 18 }: { size?: number }) => (
+  <Svg size={size}>
+    <path d="M4 20h4L19 9a2.800 2.800 0 0 0-4-4L4 16v4Z" />
+    <path d="m13.500 6.500 4 4" />
+  </Svg>
+)
+
+export const IconChevron = ({ size = 16, up = false }: { size?: number; up?: boolean }) => (
+  <Svg size={size}>
+    <path d={up ? 'm6 15 6-6 6 6' : 'm6 9 6 6 6-6'} />
+  </Svg>
+)
