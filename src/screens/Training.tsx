@@ -3,7 +3,9 @@ import { uid, useStore, type AppData, type SetEntry } from '../lib/store'
 import { formatShort, fromKey, todayKey } from '../lib/dates'
 import { lastSets } from '../lib/stats'
 import { findWorkout, getSchedule, getWorkouts, slug } from '../lib/plan'
-import type { Exercise, Workout } from '../data/training'
+import { WORKOUTS, type Exercise, type Workout } from '../data/training'
+
+const NEW_LEGS = WORKOUTS.find((w) => w.id === 'legs')!
 import { EXERCISE_LIBRARY } from '../data/exercises'
 import { TEMPLATES, type PlanTemplate } from '../data/templates'
 import { IconTimer } from '../Icons'
@@ -161,6 +163,25 @@ export default function Training() {
     setEditing(false)
   }
 
+  /* Eigener Plan mit altem Beintag? → nur den Beintag austauschen, Rest bleibt */
+  const ownLegs = data.plan?.find((w) => w.id === 'legs')
+  const legsOutdated = !!data.plan && (!ownLegs || JSON.stringify(ownLegs.exercises) !== JSON.stringify(NEW_LEGS.exercises))
+
+  function applyNewLegDay() {
+    update((d) => {
+      const plan: Workout[] = structuredClone(getWorkouts(d))
+      const i = plan.findIndex((w) => w.id === 'legs')
+      if (i >= 0) plan[i] = structuredClone(NEW_LEGS)
+      else plan.push(structuredClone(NEW_LEGS))
+      d.plan = plan
+      const sch = { ...getSchedule(d) }
+      if (!Object.values(sch).includes('legs')) sch[3] = 'legs'
+      d.schedule = sch
+      return d
+    })
+    changeWorkout('legs')
+  }
+
   const activeTemplate = TEMPLATES.find(
     (t) => JSON.stringify(t.workouts) === JSON.stringify(workouts) && JSON.stringify(t.schedule) === JSON.stringify(schedule),
   )
@@ -272,6 +293,11 @@ export default function Training() {
 
           <section className="card">
             <h2>Vorgeschlagene Pläne</h2>
+            {legsOutdated && (
+              <button className="soft wide" onClick={applyNewLegDay}>
+                Nur den neuen Beintag in meinen Plan übernehmen
+              </button>
+            )}
             <p className="hint">Wechsle mit einem Tipp. Dein Trainingsverlauf und deine Bestleistungen bleiben erhalten.</p>
             {TEMPLATES.map((t) => {
               const open = tplOpen === t.id
@@ -364,6 +390,19 @@ export default function Training() {
         </>
       ) : (
         <>
+{legsOutdated && (
+            <section className="card current">
+              <h2>Neuer Beintag fürs Laufen</h2>
+              <p className="small">
+                In deinem eigenen Plan ist noch der alte Beintag. Mit einem Tipp tauschst du nur den Beintag aus. Alle anderen Tage und deine
+                Änderungen bleiben, wie sie sind.
+              </p>
+              <p className="muted small">{NEW_LEGS.exercises.map((e) => e.name).join(', ')}</p>
+              <button className="primary wide" onClick={applyNewLegDay}>
+                Neuen Beintag übernehmen
+              </button>
+            </section>
+          )}
           {workout.exercises.length === 0 && <p className="muted">Noch keine Übungen. Tippe oben auf „Plan bearbeiten“.</p>}
           {workout.exercises.map((ex) => {
             const last = lastSets(data, ex.id, today)
